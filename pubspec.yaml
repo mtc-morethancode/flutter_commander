@@ -1,0 +1,20 @@
+name: flutter_commander
+description: Enterprise MVI + Command Pattern architecture for Flutter with declarative concurrency, strict decoupling, one-shot side effects, and zero code-gen.
+version: 1.0.0
+homepage: https://github.com/flutter-commander/flutter_commander
+repository: https://github.com/flutter-commander/flutter_commander
+issue_tracker: https://github.com/flutter-commander/flutter_commander/issues
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+  flutter: '>=3.10.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  meta: ^1.11.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
