@@ -10,6 +10,10 @@
 
 `flutter_commander` brings decoupled enterprise-grade state management to Flutter without code generation, without god-classes, and with declarative concurrency control built directly into each use-case.
 
+```bash
+flutter pub add flutter_commander
+```
+
 ---
 
 ## 🌟 Why flutter_commander?
@@ -86,6 +90,42 @@ on<SyncItemIntent>(
   concurrencyKey: (intent) => intent.itemId, // Sequential FIFO per item!
 );
 ```
+
+### ⏱️ Declarative Debounce (Search & Rapid Input)
+
+Prevent UI event flooding by adding a debounce duration directly to any `Command` or `on<I>()` handler. Combining `debounce` with `ExecutionPolicy.restart` provides rock-solid type-ahead search with zero RxDart boilerplate:
+
+```dart
+class SearchProductsCommand extends Command<SearchIntent, ShopState, ShopEffect> {
+  // Restart cancels active HTTP requests when a new query arrives:
+  @override
+  ExecutionPolicy get policy => ExecutionPolicy.restart;
+
+  // Wait 300ms of user typing inactivity before firing:
+  @override
+  Duration? get debounce => const Duration(milliseconds: 300);
+
+  @override
+  Future<void> execute(CommandScope<ShopState, ShopEffect> scope, SearchIntent intent) async {
+    final results = await _api.search(intent.query, token: scope.cancellationToken);
+    scope.updateState((s) => s.copyWith(results: results));
+  }
+}
+```
+
+Or quickly with the inline DSL:
+```dart
+on<FilterQueryIntent>(
+  (scope, intent) async {
+    final items = await api.filter(intent.query);
+    scope.updateState((s) => s.copyWith(items: items));
+  },
+  policy: ExecutionPolicy.restart,
+  debounce: const Duration(milliseconds: 250),
+);
+```
+
+> **Note:** Debounce timers are automatically scoped per `concurrencyKey` and safely cancelled when the controller or widget scope is disposed.
 
 ---
 
@@ -188,11 +228,17 @@ class CartController extends CommanderController<CartState, CartEffect> {
 
 ### 5. Build Reactive Flutter UI
 
-Choose the widget that fits your exact needs:
-- `CommanderStateBuilder<C, S>`: Rebuild with full state (only 2 generic types needed!).
-- `CommanderSelector<C, S, R>`: Rebuild when a specific property or slice changes.
-- `CommanderListener<C, E>`: Listen to one-shot side effects.
-- `CommanderStateConsumer<C, S, E>`: Combine full-state rebuild and side effects (only 3 generics).
+#### 🧩 Widget Selection Guide
+
+| Widget / Extension | Purpose | Generics | Rebuilds On |
+| :--- | :--- | :---: | :--- |
+| `CommanderStateBuilder<C, S>` | Rebuild when entire state changes | 2 (`C, S`) | Any state mutation |
+| `CommanderSelector<C, S, R>` | Rebuild only when a selected slice changes | 3 (`C, S, R`) | Selected slice equality (`==`) |
+| `CommanderListener<C, E>` | Execute side effects (navigation, dialogs, toasts) | 2 (`C, E`) | Never (side effects stream only) |
+| `CommanderStateConsumer<C, S, E>` | Combine full state builder + side effect listener | 3 (`C, S, E`) | Any state mutation |
+| `CommanderConsumer<C, S, R, E>` | Combine slice selector + side effect listener | 4 (`C, S, R, E`) | Selected slice equality (`==`) |
+| `context.select<C, R>(select)` | Read slice reactively directly inside `build()` | 2 (`C, R`) | Selected slice equality (`==`) |
+| `context.dispatch<C>(intent)` | Dispatch an intent from any `BuildContext` | 1 (`C`) | Never (fire-and-forget) |
 
 ```dart
 class CartPage extends StatelessWidget {
@@ -248,6 +294,18 @@ class CartPage extends StatelessWidget {
     );
   }
 }
+
+// 💡 Tip: In extracted widgets, read slices directly with context.select:
+class CartBadge extends StatelessWidget {
+  const CartBadge({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    // Rebuilds ONLY when count changes!
+    final count = context.select<CartController, int>((s) => s.count);
+    return Badge(label: Text('$count'), child: const Icon(Icons.shopping_cart));
+  }
+}
 ```
 
 ---
@@ -284,7 +342,49 @@ test('CheckoutCommand updates state and emits confirmation effect', () async {
 
 ## 🔍 Observability & Telemetry
 
-Add `LoggingCommandInterceptor` to log structured traces:
+### 🌐 Global `CommanderObserver`
+
+Monitor lifecycle events, state mutations, effects, and errors across the **entire application** by registering a global `CommanderObserver` in your `main()` entrypoint:
+
+```dart
+void main() {
+  Commander.observer = AppCommanderObserver();
+  runApp(const MyApp());
+}
+
+class AppCommanderObserver extends CommanderObserver {
+  @override
+  void onControllerCreated(CommanderController<dynamic, dynamic> controller) {
+    debugPrint('Created controller: ${controller.runtimeType}');
+  }
+
+  @override
+  void onStateChanged(CommanderController<dynamic, dynamic> controller, dynamic oldState, dynamic newState) {
+    debugPrint('${controller.runtimeType} -> State updated: $newState');
+  }
+
+  @override
+  void onEffectEmitted(CommanderController<dynamic, dynamic> controller, dynamic effect) {
+    debugPrint('${controller.runtimeType} -> Effect emitted: $effect');
+  }
+
+  @override
+  void onError(
+    CommanderController<dynamic, dynamic>? controller,
+    Command<dynamic, dynamic, dynamic> command,
+    CommandIntent intent,
+    Object error,
+    StackTrace stackTrace,
+  ) {
+    // Send unhandled command exceptions to Firebase Crashlytics or Sentry:
+    FirebaseCrashlytics.instance.recordError(error, stackTrace);
+  }
+}
+```
+
+### 🧩 Per-Controller `CommandInterceptor`
+
+Add `LoggingCommandInterceptor` (or custom interceptors) to individual controllers to log structured traces:
 
 ```dart
 controller.addInterceptor(const LoggingCommandInterceptor());
@@ -298,7 +398,7 @@ Produces standard console logs:
 [flutter_commander] [State] CartState(count: 0, isCheckingOut: false)
 ```
 
-Create custom interceptors by extending `CommandInterceptor` to send analytics or crash metrics to Sentry, Firebase Crashlytics, or Datadog.
+Create custom interceptors by extending `CommandInterceptor` to benchmark performance, audit events, or inject custom middleware.
 
 ---
 
