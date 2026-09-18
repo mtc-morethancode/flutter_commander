@@ -1,7 +1,7 @@
 import 'package:flutter_commander/flutter_commander.dart';
 
 /// Sealed hierarchy of all user and system intents for the Shop feature.
-sealed class ShopIntent extends Intent {
+sealed class ShopIntent extends CommandIntent {
   const ShopIntent();
 }
 

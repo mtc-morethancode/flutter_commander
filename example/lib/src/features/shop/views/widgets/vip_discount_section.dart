@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart' hide Intent;
+import 'package:flutter/material.dart';
 import 'package:flutter_commander/flutter_commander.dart';
 
 import '../../controller/shop_controller.dart';
@@ -35,7 +35,7 @@ class VipDiscountSection extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            CommanderBuilder<ShopController, ShopState, bool>(
+            CommanderSelector<ShopController, ShopState, bool>(
               select: (s) => s.hasVipDiscount,
               builder: (context, hasDiscount) {
                 return Switch(

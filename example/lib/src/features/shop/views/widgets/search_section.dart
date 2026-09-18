@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart' hide Intent;
+import 'package:flutter/material.dart';
 import 'package:flutter_commander/flutter_commander.dart';
 
 import '../../../../core/models/product.dart';
@@ -50,7 +50,7 @@ class SearchSection extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             // Rebuilds only when searching flag or search results change
-            CommanderBuilder<ShopController, ShopState, (bool, List<Product>)>(
+            CommanderSelector<ShopController, ShopState, (bool, List<Product>)>(
               select: (s) => (s.isSearching, s.searchResults),
               builder: (context, slice) {
                 final (isSearching, results) = slice;

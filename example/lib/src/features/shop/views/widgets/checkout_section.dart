@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart' hide Intent;
+import 'package:flutter/material.dart';
 import 'package:flutter_commander/flutter_commander.dart';
 
 import '../../controller/shop_controller.dart';
@@ -29,7 +29,7 @@ class CheckoutSection extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             // Rebuilds only when checkout progress, items, or total changes
-            CommanderBuilder<ShopController, ShopState, (bool, int, double, double)>(
+            CommanderSelector<ShopController, ShopState, (bool, int, double, double)>(
               select: (s) => (s.isCheckingOut, s.cartItemCount, s.subtotal, s.total),
               builder: (context, slice) {
                 final (isCheckingOut, count, subtotal, total) = slice;
