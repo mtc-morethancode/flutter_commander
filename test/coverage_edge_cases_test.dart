@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart' hide Intent;
+import 'package:flutter/material.dart';
 import 'package:flutter_commander/flutter_commander.dart';
 import 'package:flutter_commander/src/controller/command_registry.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -15,7 +15,7 @@ class DummyEffect {
   const DummyEffect();
 }
 
-abstract class BaseIntent extends Intent {
+abstract class BaseIntent extends CommandIntent {
   const BaseIntent();
 }
 
@@ -23,7 +23,7 @@ class DerivedIntent extends BaseIntent {
   const DerivedIntent();
 }
 
-class QueuedSlowIntent extends Intent {
+class QueuedSlowIntent extends CommandIntent {
   const QueuedSlowIntent();
 }
 
@@ -328,7 +328,7 @@ void main() {
   });
 }
 
-class QueuedFailingIntent extends Intent {
+class QueuedFailingIntent extends CommandIntent {
   const QueuedFailingIntent();
 }
 
