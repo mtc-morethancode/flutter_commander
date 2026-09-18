@@ -58,6 +58,35 @@ Every formal `Command` declares its own concurrency policy via `ExecutionPolicy`
 | `ExecutionPolicy.queue` | Enqueues invocations in strict FIFO order, executing them sequentially one after another. | Offline sync queues, analytics tracking, transactional writes. |
 | `ExecutionPolicy.concurrent` | Executes all invocations in parallel without blocking or dropping. | Independent data fetching, multi-file downloading. |
 
+### 🎯 Keyed Concurrency (Granular Concurrency per Item/Resource)
+
+By default, policies apply globally across all instances of a `Command`. To apply policies **per item, user, or entity** (e.g., dropping duplicate taps for item `A` while still allowing item `B`), override `concurrencyKey`:
+
+```dart
+class DownloadFileCommand extends Command<DownloadIntent, FileState, FileEffect> {
+  @override
+  ExecutionPolicy get policy => ExecutionPolicy.drop;
+
+  // Concurrency policy is isolated per file ID:
+  @override
+  Object? concurrencyKey(DownloadIntent intent) => intent.fileId;
+
+  @override
+  Future<void> execute(CommandScope<FileState, FileEffect> scope, DownloadIntent intent) async {
+    // Downloading file A will NOT drop requests for file B!
+  }
+}
+```
+
+The inline DSL also supports `concurrencyKey`:
+```dart
+on<SyncItemIntent>(
+  (scope, intent) async { ... },
+  policy: ExecutionPolicy.queue,
+  concurrencyKey: (intent) => intent.itemId, // Sequential FIFO per item!
+);
+```
+
 ---
 
 ## 🚀 Quickstart Guide
@@ -94,12 +123,14 @@ class OrderConfirmedEffect extends CartEffect {
 
 ### 2. Define Intents
 
+Use `CommandIntent` to avoid namespace collisions with Flutter's built-in `actions.dart` `Intent`:
+
 ```dart
-class CheckoutIntent extends Intent {
+class CheckoutIntent extends CommandIntent {
   const CheckoutIntent();
 }
 
-class IncrementIntent extends Intent {
+class IncrementIntent extends CommandIntent {
   const IncrementIntent();
 }
 ```
@@ -157,6 +188,12 @@ class CartController extends CommanderController<CartState, CartEffect> {
 
 ### 5. Build Reactive Flutter UI
 
+Choose the widget that fits your exact needs:
+- `CommanderStateBuilder<C, S>`: Rebuild with full state (only 2 generic types needed!).
+- `CommanderSelector<C, S, R>`: Rebuild when a specific property or slice changes.
+- `CommanderListener<C, E>`: Listen to one-shot side effects.
+- `CommanderStateConsumer<C, S, E>`: Combine full-state rebuild and side effects (only 3 generics).
+
 ```dart
 class CartPage extends StatelessWidget {
   const CartPage({super.key});
@@ -181,7 +218,7 @@ class CartPage extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // Selector rebuild: Only rebuilds when count changes!
-                CommanderBuilder<CartController, CartState, int>(
+                CommanderSelector<CartController, CartState, int>(
                   select: (state) => state.count,
                   builder: (context, count) => Text('Items: $count', style: const TextStyle(fontSize: 24)),
                 ),
@@ -192,7 +229,7 @@ class CartPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 // Rebuilds only on isCheckingOut
-                CommanderBuilder<CartController, CartState, bool>(
+                CommanderSelector<CartController, CartState, bool>(
                   select: (state) => state.isCheckingOut,
                   builder: (context, isCheckingOut) => ElevatedButton(
                     onPressed: isCheckingOut
@@ -262,6 +299,29 @@ Produces standard console logs:
 ```
 
 Create custom interceptors by extending `CommandInterceptor` to send analytics or crash metrics to Sentry, Firebase Crashlytics, or Datadog.
+
+---
+
+## 🛡️ Resilient Error Handling
+
+By default, unhandled command exceptions are rethrown so that tests and callers can detect them. To handle errors gracefully without crashing the UI, override `onError` in your controller and emit side-effects directly:
+
+```dart
+class CartController extends CommanderController<CartState, CartEffect> {
+  CartController(...) : super(...) { ... }
+
+  @override
+  void onError(Object error, StackTrace stackTrace, CommandIntent intent) {
+    // 1. Report to telemetry:
+    Crashlytics.instance.recordError(error, stackTrace);
+
+    // 2. Emit an error toast or snackbar to the user:
+    emitSideEffect(ShowToastEffect('An unexpected error occurred.'));
+
+    // 3. Do not rethrow: the error is safely absorbed!
+  }
+}
+```
 
 ---
 
