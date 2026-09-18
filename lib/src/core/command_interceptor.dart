@@ -7,10 +7,10 @@ abstract class CommandInterceptor {
   const CommandInterceptor();
 
   /// Invoked immediately before a command starts execution.
-  void onBeforeExecute(Command<dynamic, dynamic, dynamic> command, Intent intent) {}
+  void onBeforeExecute(Command<dynamic, dynamic, dynamic> command, CommandIntent intent) {}
 
   /// Invoked after a command finishes execution (successful or cancelled).
-  void onAfterExecute(Command<dynamic, dynamic, dynamic> command, Intent intent) {}
+  void onAfterExecute(Command<dynamic, dynamic, dynamic> command, CommandIntent intent) {}
 
   /// Invoked whenever the controller's state is updated.
   void onStateChanged(dynamic oldState, dynamic newState) {}
@@ -21,7 +21,7 @@ abstract class CommandInterceptor {
   /// Invoked if a command execution throws an unhandled error.
   void onError(
     Command<dynamic, dynamic, dynamic> command,
-    Intent intent,
+    CommandIntent intent,
     Object error,
     StackTrace stackTrace,
   ) {}

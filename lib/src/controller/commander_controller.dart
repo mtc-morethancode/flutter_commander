@@ -5,15 +5,16 @@ import 'package:flutter/foundation.dart';
 import '../core/command.dart';
 import '../core/command_interceptor.dart';
 import '../core/command_scope.dart';
+import '../core/commander_observer.dart';
 import '../core/execution_policy.dart';
 import '../core/intent.dart';
 import 'command_registry.dart';
 import 'command_runner.dart';
 
-/// Thrown when an [Intent] is dispatched without any matching registered [Command].
+/// Thrown when an [CommandIntent] is dispatched without any matching registered [Command].
 class UnregisteredIntentException implements Exception {
   /// The unmatched intent instance.
-  final Intent intent;
+  final CommandIntent intent;
 
   /// Creates an [UnregisteredIntentException] for [intent].
   const UnregisteredIntentException(this.intent);
@@ -57,12 +58,17 @@ abstract class CommanderController<S, E> with ChangeNotifier implements ValueLis
       _interceptors.addAll(interceptors);
     }
 
+    Commander.observer?.onControllerCreated(this);
     _registry = CommandRegistry<S, E>();
     _runner = CommandRunner<S, E>(
+      controller: this,
       getState: () => _state,
       updateState: _handleUpdateState,
       emitSideEffect: _handleEmitSideEffect,
       interceptors: _interceptors,
+      onError: (command, intent, error, stackTrace) {
+        onError(error, stackTrace, intent);
+      },
     );
   }
 
@@ -98,7 +104,7 @@ abstract class CommanderController<S, E> with ChangeNotifier implements ValueLis
   /// bind(SubmitOrderCommand(repo));
   /// ```
   @protected
-  void bind<I extends Intent>(Command<I, S, E> command) {
+  void bind<I extends CommandIntent>(Command<I, S, E> command) {
     _registry.register<I>(command);
   }
 
@@ -112,11 +118,41 @@ abstract class CommanderController<S, E> with ChangeNotifier implements ValueLis
   /// });
   /// ```
   @protected
-  void on<I extends Intent>(
+  void on<I extends CommandIntent>(
     FutureOr<void> Function(CommandScope<S, E> scope, I intent) handler, {
     ExecutionPolicy policy = ExecutionPolicy.concurrent,
+    Object? Function(I intent)? concurrencyKey,
+    Duration? debounce,
   }) {
-    _registry.registerInline<I>(handler, policy: policy);
+    _registry.registerInline<I>(
+      handler,
+      policy: policy,
+      concurrencyKey: concurrencyKey,
+      debounce: debounce,
+    );
+  }
+
+  /// Hook invoked whenever an unhandled error occurs during the execution of a command.
+  ///
+  /// By default, this method rethrows the error with its original [stackTrace].
+  /// Subclasses can override this method to handle errors globally (e.g. logging to
+  /// Crashlytics, emitting an error side effect, or updating error state) without
+  /// letting unhandled exceptions crash the UI layer.
+  ///
+  /// Example:
+  /// ```dart
+  /// @override
+  /// void onError(Object error, StackTrace stackTrace, CommandIntent intent) {
+  ///   // Absorb error safely or emit side effect
+  /// }
+  /// ```
+  @protected
+  void onError(
+    Object error,
+    StackTrace stackTrace,
+    CommandIntent intent,
+  ) {
+    Error.throwWithStackTrace(error, stackTrace);
   }
 
   /// Dispatches an [intent] to be processed by its corresponding registered [Command].
@@ -124,7 +160,7 @@ abstract class CommanderController<S, E> with ChangeNotifier implements ValueLis
   /// Returns a [Future] completing when the command execution finishes
   /// (or completes immediately if dropped by [ExecutionPolicy.drop]).
   /// Throws [UnregisteredIntentException] if no command was registered for [intent].
-  Future<void> dispatch(Intent intent) async {
+  Future<void> dispatch(CommandIntent intent) async {
     if (_isDisposed) return;
 
     final command = _registry.find(intent);
@@ -135,6 +171,10 @@ abstract class CommanderController<S, E> with ChangeNotifier implements ValueLis
     await _runner.run(command, intent);
   }
 
+  /// Updates the state using the provided pure [reducer].
+  ///
+  /// Note: States must be immutable. If the [reducer] returns an identical or
+  /// equal (`==`) state, [notifyListeners] is skipped to prevent redundant rebuilds.
   void _handleUpdateState(S Function(S current) reducer) {
     if (_isDisposed) return;
 
@@ -148,6 +188,7 @@ abstract class CommanderController<S, E> with ChangeNotifier implements ValueLis
 
     _state = newState;
 
+    Commander.observer?.onStateChanged(this, oldState, newState);
     for (final interceptor in _interceptors) {
       try {
         interceptor.onStateChanged(oldState, newState);
@@ -157,9 +198,14 @@ abstract class CommanderController<S, E> with ChangeNotifier implements ValueLis
     notifyListeners();
   }
 
+  /// Emits a one-shot side effect directly through this controller's effects stream.
+  @protected
+  void emitSideEffect(E effect) => _handleEmitSideEffect(effect);
+
   void _handleEmitSideEffect(E effect) {
     if (_isDisposed) return;
 
+    Commander.observer?.onEffectEmitted(this, effect);
     for (final interceptor in _interceptors) {
       try {
         interceptor.onEffectEmitted(effect);
@@ -177,6 +223,7 @@ abstract class CommanderController<S, E> with ChangeNotifier implements ValueLis
     if (_isDisposed) return;
     _isDisposed = true;
 
+    Commander.observer?.onControllerDisposed(this);
     _runner.dispose();
     _registry.clear();
     unawaited(_effectsController.close());

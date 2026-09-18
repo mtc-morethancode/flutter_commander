@@ -32,7 +32,7 @@ import 'intent.dart';
 ///   }
 /// }
 /// ```
-abstract class Command<I extends Intent, S, E> {
+abstract class Command<I extends CommandIntent, S, E> {
   /// Const constructor for commands without mutable state.
   const Command();
 
@@ -40,6 +40,23 @@ abstract class Command<I extends Intent, S, E> {
   /// Defaults to [ExecutionPolicy.concurrent].
   ExecutionPolicy get policy => ExecutionPolicy.concurrent;
 
+  /// Optional key used to scope concurrency policies ([ExecutionPolicy.drop],
+  /// [ExecutionPolicy.restart], [ExecutionPolicy.queue]) per entity or group rather
+  /// than globally across all invocations of this command.
+  ///
+  /// If null (default), the policy applies globally across all invocations of this command.
+  /// If non-null, the policy applies independently to each unique key returned.
+  Object? concurrencyKey(I intent) => null;
+
+  /// Optional duration to debounce invocations of this command.
+  ///
+  /// If specified and greater than [Duration.zero], incoming invocations will wait
+  /// for [debounce] of inactivity before proceeding to execution under [policy].
+  /// If a new invocation arrives before the duration elapses, the previous timer
+  /// is reset.
+  Duration? get debounce => null;
+
   /// Executes the command logic with the provided [scope] and triggering [intent].
   Future<void> execute(CommandScope<S, E> scope, I intent);
 }
+

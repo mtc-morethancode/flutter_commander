@@ -14,11 +14,14 @@ import 'package:meta/meta.dart';
 /// }
 /// ```
 @immutable
-abstract class Intent {
+abstract class CommandIntent {
   /// Const constructor for intent subclasses.
-  const Intent();
+  const CommandIntent();
 }
 
-/// Canonical alias for [Intent] in case of namespace collisions with Flutter's
-/// `actions.dart` [Intent].
-typedef CommandIntent = Intent;
+/// Convenience alias for [CommandIntent].
+///
+/// Note: When importing `package:flutter/widgets.dart` or `package:flutter/material.dart`,
+/// prefer using [CommandIntent] directly to avoid namespace collisions with Flutter's
+/// built-in `actions.dart` [Intent].
+typedef Intent = CommandIntent;
