@@ -51,7 +51,7 @@ class CommanderBuilder<C extends CommanderController<S, dynamic>, S, R>
 
 class _CommanderBuilderState<C extends CommanderController<S, dynamic>, S, R>
     extends State<CommanderBuilder<C, S, R>> {
-  late C _controller;
+  C? _controller;
   late R _currentValue;
 
   @override
@@ -64,16 +64,18 @@ class _CommanderBuilderState<C extends CommanderController<S, dynamic>, S, R>
   void didUpdateWidget(CommanderBuilder<C, S, R> oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.controller != oldWidget.controller) {
-      oldWidget.controller?.removeListener(_onStateChanged);
       _subscribe();
     }
   }
 
   void _subscribe() {
-    _controller = widget.controller ?? CommanderScope.of<C>(context, listen: false);
-    _controller.removeListener(_onStateChanged);
-    _controller.addListener(_onStateChanged);
-    _currentValue = _computeValue(_controller.state);
+    final controller = widget.controller ?? CommanderScope.of<C>(context, listen: false);
+    if (_controller == controller) return;
+
+    _controller?.removeListener(_onStateChanged);
+    _controller = controller;
+    _controller!.addListener(_onStateChanged);
+    _currentValue = _computeValue(_controller!.state);
   }
 
   R _computeValue(S state) {
@@ -84,7 +86,10 @@ class _CommanderBuilderState<C extends CommanderController<S, dynamic>, S, R>
   }
 
   void _onStateChanged() {
-    final newValue = _computeValue(_controller.state);
+    final controller = _controller;
+    if (controller == null) return;
+
+    final newValue = _computeValue(controller.state);
     final shouldRebuild = widget.buildWhen != null
         ? widget.buildWhen!(_currentValue, newValue)
         : !identical(_currentValue, newValue) && _currentValue != newValue;
@@ -98,7 +103,8 @@ class _CommanderBuilderState<C extends CommanderController<S, dynamic>, S, R>
 
   @override
   void dispose() {
-    _controller.removeListener(_onStateChanged);
+    _controller?.removeListener(_onStateChanged);
+    _controller = null;
     super.dispose();
   }
 

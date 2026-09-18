@@ -1,4 +1,4 @@
-import 'package:flutter/widgets.dart' hide Intent;
+import 'package:flutter/widgets.dart';
 
 import '../controller/commander_controller.dart';
 import '../core/intent.dart';
@@ -23,7 +23,7 @@ extension CommanderBuildContextX on BuildContext {
   /// context.dispatch<OrderController>(const SubmitOrderIntent('123'));
   /// ```
   Future<void> dispatch<C extends CommanderController<dynamic, dynamic>>(
-    Intent intent,
+    CommandIntent intent,
   ) {
     return commander<C>().dispatch(intent);
   }
@@ -31,16 +31,19 @@ extension CommanderBuildContextX on BuildContext {
   /// Subscribes this widget to a selected slice [R] of state [S] from controller [C].
   ///
   /// Only rebuilds this widget when the returned [R] value changes.
+  /// An optional [aspectKey] can be provided for stable aspect equality caching.
   ///
   /// Example:
   /// ```dart
   /// final isLoading = context.select<OrderController, OrderState, bool>(
   ///   (state) => state.isLoading,
+  ///   aspectKey: #isLoading,
   /// );
   /// ```
   R select<C extends CommanderController<S, dynamic>, S, R>(
-    R Function(S state) selector,
-  ) {
-    return CommanderScope.select<C, S, R>(this, selector);
+    R Function(S state) selector, {
+    Object? aspectKey,
+  }) {
+    return CommanderScope.select<C, S, R>(this, selector, aspectKey: aspectKey);
   }
 }

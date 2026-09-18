@@ -72,16 +72,23 @@ class CommanderScope<C extends CommanderController<dynamic, dynamic>> extends St
   ///
   /// The calling widget will only rebuild when the value returned by [selector]
   /// changes (using equality `!=`).
+  ///
+  /// For optimal aspect equality caching during frequent rebuilds, supply an [aspectKey]
+  /// (e.g. `aspectKey: #itemCount` or `aspectKey: 'itemCount'`).
+  ///
+  /// Recommendation: For isolated UI subtrees, consider using [CommanderSelector]
+  /// which connects via direct local listeners without InheritedModel aspect registration.
   static R select<C extends CommanderController<S, dynamic>, S, R>(
     BuildContext context,
-    R Function(S state) selector,
-  ) {
+    R Function(S state) selector, {
+    Object? aspectKey,
+  }) {
     // 1. Obtain controller without registering a full rebuild dependency
     final controller = of<C>(context, listen: false) as CommanderController<S, dynamic>;
     final currentValue = selector(controller.state);
 
     // 2. Register fine-grained aspect dependency
-    final aspect = _SelectorAspect<S, R>(selector, currentValue);
+    final aspect = _SelectorAspect<S, R>(selector, aspectKey);
     InheritedModel.inheritFrom<_CommanderInheritedModel<C>>(context, aspect: aspect);
 
     return currentValue;
@@ -183,9 +190,9 @@ abstract class _Aspect {
 
 class _SelectorAspect<S, R> implements _Aspect {
   final R Function(S state) selector;
-  final R lastValue;
+  final Object? aspectKey;
 
-  _SelectorAspect(this.selector, this.lastValue);
+  _SelectorAspect(this.selector, [this.aspectKey]);
 
   @override
   bool hasChanged(dynamic oldState, dynamic newState) {
@@ -196,12 +203,15 @@ class _SelectorAspect<S, R> implements _Aspect {
   }
 
   @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is _SelectorAspect &&
-          runtimeType == other.runtimeType &&
-          selector == other.selector;
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! _SelectorAspect) return false;
+    if (aspectKey != null && other.aspectKey != null) {
+      return aspectKey == other.aspectKey;
+    }
+    return selector == other.selector;
+  }
 
   @override
-  int get hashCode => selector.hashCode;
+  int get hashCode => aspectKey != null ? aspectKey.hashCode : selector.hashCode;
 }
