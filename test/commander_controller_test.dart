@@ -1,4 +1,5 @@
 import 'package:flutter_commander/flutter_commander.dart';
+import 'package:flutter_commander/src/controller/command_registry.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class CounterState {
@@ -47,21 +48,21 @@ class ShowToastEffect extends CounterEffect {
   String toString() => 'ShowToastEffect(message: $message)';
 }
 
-class IncrementIntent extends Intent {
+class IncrementIntent extends CommandIntent {
   final int amount;
   const IncrementIntent([this.amount = 1]);
 }
 
-class SetLabelIntent extends Intent {
+class SetLabelIntent extends CommandIntent {
   final String label;
   const SetLabelIntent(this.label);
 }
 
-class UnhandledIntent extends Intent {
+class UnhandledIntent extends CommandIntent {
   const UnhandledIntent();
 }
 
-class FailIntent extends Intent {
+class FailIntent extends CommandIntent {
   const FailIntent();
 }
 
@@ -103,12 +104,12 @@ class MockInterceptor extends CommandInterceptor {
   final List<String> events = [];
 
   @override
-  void onBeforeExecute(Command<dynamic, dynamic, dynamic> command, Intent intent) {
+  void onBeforeExecute(Command<dynamic, dynamic, dynamic> command, CommandIntent intent) {
     events.add('before_${intent.runtimeType}');
   }
 
   @override
-  void onAfterExecute(Command<dynamic, dynamic, dynamic> command, Intent intent) {
+  void onAfterExecute(Command<dynamic, dynamic, dynamic> command, CommandIntent intent) {
     events.add('after_${intent.runtimeType}');
   }
 
@@ -125,7 +126,7 @@ class MockInterceptor extends CommandInterceptor {
   @override
   void onError(
     Command<dynamic, dynamic, dynamic> command,
-    Intent intent,
+    CommandIntent intent,
     Object error,
     StackTrace stackTrace,
   ) {
@@ -234,6 +235,20 @@ void main() {
     test('dispose marks controller as disposed and cleans up resources', () {
       controller.dispose();
       expect(controller.isDisposed, isTrue);
+    });
+
+    test('CommandRegistry caches polymorphic resolution for O(1) subsequent lookups', () {
+      final registry = CommandRegistry<CounterState, CounterEffect>();
+      final cmd = IncrementCommand();
+      registry.register<IncrementIntent>(cmd);
+
+      // First lookup performs match and caches
+      final first = registry.find(const IncrementIntent(1));
+      expect(identical(first, cmd), isTrue);
+
+      // Second lookup hits exact cache
+      final second = registry.find(const IncrementIntent(2));
+      expect(identical(second, cmd), isTrue);
     });
   });
 }

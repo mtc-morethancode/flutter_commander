@@ -43,6 +43,8 @@ class CommandRegistry<S, E> {
     // 2. Polymorphic match fallback
     for (final entry in _entries.values) {
       if (entry.isCompatible(intent)) {
+        // Cache polymorphic resolution for subsequent O(1) lookups
+        _entries[intent.runtimeType] = entry;
         return entry.command;
       }
     }

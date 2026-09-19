@@ -8,11 +8,12 @@ import '../core/command_scope.dart';
 import '../core/commander_observer.dart';
 import '../core/execution_policy.dart';
 import '../core/intent.dart';
+import 'commander_controller.dart';
 
 /// Runner responsible for orchestrating command execution under their specified
 /// [ExecutionPolicy], managing queues, cancellation tokens, debounce timers, and interceptors.
 class CommandRunner<S, E> {
-  final dynamic _controller;
+  final CommanderController<dynamic, dynamic>? _controller;
   final S Function() _getState;
   final void Function(S Function(S current) reducer) _updateState;
   final void Function(E effect) _emitSideEffect;
@@ -37,7 +38,7 @@ class CommandRunner<S, E> {
 
   /// Creates a [CommandRunner] wired to the controller's state, effect channels, and error handler.
   CommandRunner({
-    required dynamic controller,
+    required CommanderController<dynamic, dynamic>? controller,
     required S Function() getState,
     required void Function(S Function(S current) reducer) updateState,
     required void Function(E effect) emitSideEffect,
