@@ -33,22 +33,22 @@ class TestEffect {
 }
 
 // Intents
-class DropIntent extends Intent {
+class DropIntent extends CommandIntent {
   final String id;
   const DropIntent(this.id);
 }
 
-class RestartIntent extends Intent {
+class RestartIntent extends CommandIntent {
   final String query;
   const RestartIntent(this.query);
 }
 
-class QueueIntent extends Intent {
+class QueueIntent extends CommandIntent {
   final int item;
   const QueueIntent(this.item);
 }
 
-class ConcurrentIntent extends Intent {
+class ConcurrentIntent extends CommandIntent {
   final int id;
   const ConcurrentIntent(this.id);
 }

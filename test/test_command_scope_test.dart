@@ -69,7 +69,7 @@ class NavigateToConfirmationEffect extends OrderEffect {
   String toString() => 'NavigateToConfirmationEffect(orderId: $orderId)';
 }
 
-class SubmitOrderIntent extends Intent {
+class SubmitOrderIntent extends CommandIntent {
   final String orderId;
   const SubmitOrderIntent(this.orderId);
 }
