@@ -4,7 +4,7 @@
 [![Dart SDK](https://img.shields.io/badge/Dart-3.0+-0175C2.svg)](https://dart.dev)
 [![Flutter](https://img.shields.io/badge/Flutter-3.10+-02569B.svg)](https://flutter.dev)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Coverage](https://img.shields.io/badge/coverage-97.8%25-brightgreen.svg)]()
+[![Coverage](https://img.shields.io/badge/coverage-98.4%25-brightgreen.svg)]()
 
 **Enterprise MVI + Command Pattern architecture for Flutter.**
 
@@ -16,136 +16,134 @@ flutter pub add flutter_commander
 
 ---
 
-## 🌟 Why flutter_commander?
+## ⚡ 3-Minute Quickstart (Para los ansiosos)
 
-In enterprise Flutter applications, traditional BLoC and Riverpod implementations frequently suffer from:
-1. **God ViewModels / Blocs**: As features grow, a single Bloc/Notifier accumulates dozens of events, methods, and injected services, creating monolithic files that lead to constant merge conflicts across concurrent teams.
-2. **Race Conditions & Fragile Debounce**: Handling double-tap submissions, search cancellations, or ordered sync queues often requires error-prone manual boilerplate (`rxdart` operators, debounce timers, or mutable flags).
-3. **State Pollution**: Using presentation state for one-shot events (e.g., `state.showSuccessSnackbar == true`) leads to ugly hacks (`state.copyWith(showSuccessSnackbar: false)` or event consumption flags) that cause ghost re-triggers on screen rotation.
-4. **Heavy Code Generation**: Relying on code generation slows down hot reload and compilation cycles.
-
-### The Solution:
-
-```
-[ User Interaction ] ───> [ Intent ]
-                               │
-                               ▼
-                      [ CommandRunner ]
-                (ExecutionPolicy Concurrency)
-                               │
-                               ▼
-                           [ Command ]
-                    (Isolated Single Use-Case)
-                           /        \
-                          /          \
-                         ▼            ▼
-                     [ State ]   [ SideEffect ]
-                    (Persistent)    (One-Shot)
-```
-
-- **Strict Unidirectional Flow**: `Intent -> Command -> State / SideEffect`.
-- **True Decoupling (SRP)**: Each complex operation lives in its own dedicated `Command` class with only the dependencies it actually needs. Multiple developers can work on the same screen concurrently without touching the same file.
-- **Declarative Concurrency (`ExecutionPolicy`)**: Configure how each command behaves under rapid invocation (`DROP`, `RESTART`, `QUEUE`, `CONCURRENT`) without writing custom debounce or cancellation logic.
-- **Dedicated SideEffect Channel**: One-shot events (Navigation, SnackBars, Dialogs) are emitted through a dedicated broadcast stream and consumed without rebuilding widgets.
-- **Pure Dart 3**: Built on `sealed classes`, pattern matching, and strong typing. Zero code-gen required.
-
----
-
-## ⚡ Concurrency Policies (ExecutionPolicy)
-
-Every formal `Command` declares its own concurrency policy via `ExecutionPolicy`:
-
-| Policy | Behavior | Typical Use Case |
-| :--- | :--- | :--- |
-| `ExecutionPolicy.drop` | If the command is running, new intents of this type are **immediately ignored**. | Double-tap prevention on checkout, login, or submit buttons. |
-| `ExecutionPolicy.restart` | Cancels the active execution cooperatively via `CancellationToken` and runs the new intent immediately. | Type-ahead live search, autocomplete, tab switches. |
-| `ExecutionPolicy.queue` | Enqueues invocations in strict FIFO order, executing them sequentially one after another. | Offline sync queues, analytics tracking, transactional writes. |
-| `ExecutionPolicy.concurrent` | Executes all invocations in parallel without blocking or dropping. | Independent data fetching, multi-file downloading. |
-
-### 🎯 Keyed Concurrency (Granular Concurrency per Item/Resource)
-
-By default, policies apply globally across all instances of a `Command`. To apply policies **per item, user, or entity** (e.g., dropping duplicate taps for item `A` while still allowing item `B`), override `concurrencyKey`:
+¿Tenés prisa? Acá tenés el flujo MVI completo en un solo bloque autocontenido de 40 líneas:
 
 ```dart
-class DownloadFileCommand extends Command<DownloadIntent, FileState, FileEffect> {
-  @override
-  ExecutionPolicy get policy => ExecutionPolicy.drop;
+import 'package:flutter/material.dart';
+import 'package:flutter_commander/flutter_commander.dart';
 
-  // Concurrency policy is isolated per file ID:
-  @override
-  Object? concurrencyKey(DownloadIntent intent) => intent.fileId;
-
-  @override
-  Future<void> execute(CommandScope<FileState, FileEffect> scope, DownloadIntent intent) async {
-    // Downloading file A will NOT drop requests for file B!
-  }
-}
-```
-
-The inline DSL also supports `concurrencyKey`:
-```dart
-on<SyncItemIntent>(
-  (scope, intent) async { ... },
-  policy: ExecutionPolicy.queue,
-  concurrencyKey: (intent) => intent.itemId, // Sequential FIFO per item!
-);
-```
-
-### ⏱️ Declarative Debounce (Search & Rapid Input)
-
-Prevent UI event flooding by adding a debounce duration directly to any `Command` or `on<I>()` handler. Combining `debounce` with `ExecutionPolicy.restart` provides rock-solid type-ahead search with zero RxDart boilerplate:
-
-```dart
-class SearchProductsCommand extends Command<SearchIntent, ShopState, ShopEffect> {
-  // Restart cancels active HTTP requests when a new query arrives:
-  @override
-  ExecutionPolicy get policy => ExecutionPolicy.restart;
-
-  // Wait 300ms of user typing inactivity before firing:
-  @override
-  Duration? get debounce => const Duration(milliseconds: 300);
-
-  @override
-  Future<void> execute(CommandScope<ShopState, ShopEffect> scope, SearchIntent intent) async {
-    final results = await _api.search(intent.query, token: scope.cancellationToken);
-    scope.updateState((s) => s.copyWith(results: results));
-  }
-}
-```
-
-Or quickly with the inline DSL:
-```dart
-on<FilterQueryIntent>(
-  (scope, intent) async {
-    final items = await api.filter(intent.query);
-    scope.updateState((s) => s.copyWith(items: items));
-  },
-  policy: ExecutionPolicy.restart,
-  debounce: const Duration(milliseconds: 250),
-);
-```
-
-> **Note:** Debounce timers are automatically scoped per `concurrencyKey` and safely cancelled when the controller or widget scope is disposed.
-
----
-
-## 🚀 Quickstart Guide
-
-### 1. Define State and SideEffects
-
-```dart
+// 1. Estado y Efecto (One-Shot)
 class CartState {
   final int count;
-  final bool isCheckingOut;
-
-  const CartState({this.count = 0, this.isCheckingOut = false});
-
-  CartState copyWith({int? count, bool? isCheckingOut}) => CartState(
-        count: count ?? this.count,
-        isCheckingOut: isCheckingOut ?? this.isCheckingOut,
-      );
+  const CartState({this.count = 0});
+}
+sealed class CartEffect { const CartEffect(); }
+class ShowToastEffect extends CartEffect {
+  final String message;
+  const ShowToastEffect(this.message);
 }
 
+// 2. Intent
+class AddItemIntent extends CommandIntent { const AddItemIntent(); }
+
+// 3. Controller con Inline DSL o Comando
+class CartController extends CommanderController<CartState, CartEffect> {
+  CartController() : super(const CartState()) {
+    on<AddItemIntent>((scope, intent) {
+      scope.updateState((s) => CartState(count: s.count + 1));
+      scope.emitSideEffect(const ShowToastEffect('Item agregado al carrito!'));
+    });
+  }
+}
+
+// 4. UI Reactiva
+class QuickstartApp extends StatelessWidget {
+  const QuickstartApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return CommanderScope<CartController>(
+      create: (_) => CartController(),
+      child: CommanderListener<CartController, CartEffect>(
+        onEffect: (context, effect) {
+          if (effect is ShowToastEffect) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(effect.message)));
+          }
+        },
+        child: Scaffold(
+          body: Center(
+            child: CommanderSelector<CartController, CartState, int>(
+              select: (s) => s.count,
+              builder: (context, count) => Text('Items: $count', style: const TextStyle(fontSize: 24)),
+            ),
+          ),
+          floatingActionButton: Builder(
+            builder: (context) => FloatingActionButton(
+              onPressed: () => context.dispatch<CartController>(const AddItemIntent()),
+              child: const Icon(Icons.add),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+```
+
+¡Listo! Ya tenés flujo unidireccional estricto, estado persistente y efectos one-shot desacoplados.
+
+---
+
+## 📖 Deep Dive: Guía Arquitectónica Completa
+
+A continuación desarrollamos la arquitectura completa utilizando un único dominio consistente: **Una Tienda E-Commerce (E-Commerce Store & Checkout)**.
+
+```
+[ User Interaction ] ───> [ CommandIntent ]
+                                │
+                                ▼
+                       [ CommandRunner ]
+                 (ExecutionPolicy Concurrency)
+                                │
+                                ▼
+                            [ Command ]
+                     (Isolated Single Use-Case)
+                            /        \
+                           /          \
+                          ▼            ▼
+                      [ State ]   [ SideEffect ]
+                     (Persistent)    (One-Shot)
+```
+
+---
+
+### 1. El Dominio: Estado, Efectos e Intents
+
+En `flutter_commander`, el estado contiene únicamente datos de presentación persistentes. Los eventos de navegación, alertas y diálogos viajan por un canal dedicado de **SideEffect**:
+
+```dart
+// Estado inmutable de la tienda
+class CartState {
+  final List<String> items;
+  final List<String> searchResults;
+  final bool isCheckingOut;
+  final bool isVip;
+
+  const CartState({
+    this.items = const [],
+    this.searchResults = const [],
+    this.isCheckingOut = false,
+    this.isVip = false,
+  });
+
+  int get itemCount => items.length;
+
+  CartState copyWith({
+    List<String>? items,
+    List<String>? searchResults,
+    bool? isCheckingOut,
+    bool? isVip,
+  }) => CartState(
+    items: items ?? this.items,
+    searchResults: searchResults ?? this.searchResults,
+    isCheckingOut: isCheckingOut ?? this.isCheckingOut,
+    isVip: isVip ?? this.isVip,
+  );
+}
+
+// Efectos one-shot (Snackbars, navegación, modales)
 sealed class CartEffect {
   const CartEffect();
 }
@@ -159,86 +157,185 @@ class OrderConfirmedEffect extends CartEffect {
   final String orderId;
   const OrderConfirmedEffect(this.orderId);
 }
-```
 
-### 2. Define Intents
+// Intents de usuario y del sistema
+class AddToCartIntent extends CommandIntent {
+  final String productId;
+  const AddToCartIntent(this.productId);
+}
 
-Use `CommandIntent` to avoid namespace collisions with Flutter's built-in `actions.dart` `Intent`:
+class SearchProductsIntent extends CommandIntent {
+  final String query;
+  const SearchProductsIntent(this.query);
+}
 
-```dart
 class CheckoutIntent extends CommandIntent {
   const CheckoutIntent();
 }
 
-class IncrementIntent extends CommandIntent {
-  const IncrementIntent();
+class TrackAnalyticsIntent extends CommandIntent {
+  final String event;
+  const TrackAnalyticsIntent(this.event);
+}
+
+class ToggleVipIntent extends CommandIntent {
+  const ToggleVipIntent();
 }
 ```
 
-### 3. Create Isolated Commands
+---
+
+### 2. Políticas de Concurrencia Declarativas (`ExecutionPolicy`)
+
+Cada caso de uso complejo se implementa en su propio `Command`, configurando su comportamiento ante llamadas concurrentes o sucesivas rápidas con **cero boilerplate de RxDart**:
+
+| Política | Comportamiento en la Tienda | Caso de Uso |
+| :--- | :--- | :--- |
+| `ExecutionPolicy.drop` | Si el comando ya está corriendo, nuevos intents se **descartan inmediatamente**. | **Checkout**: Evita cobros duplicados al presionar múltiples veces el botón de pagar. |
+| `ExecutionPolicy.restart` | Cancela la ejecución previa (vía `CancellationToken`) y arranca el nuevo intent. | **Búsqueda en vivo**: Cancela peticiones HTTP anteriores cuando el usuario sigue escribiendo. |
+| `ExecutionPolicy.queue` | Encola invocaciones en estricto orden FIFO ejecutándolas una por una. | **Analytics / Auditoría**: Asegura que los eventos de tracking se envíen en orden cronológico exacto. |
+| `ExecutionPolicy.concurrent` | Ejecuta todas las peticiones en paralelo sin bloqueo ni descarte. | **Descarga de imágenes / Consultas independientes**. |
+
+#### A. `ExecutionPolicy.drop` (Prevención de Doble Pago en Checkout)
 
 ```dart
 class CheckoutCommand extends Command<CheckoutIntent, CartState, CartEffect> {
   final PaymentService _paymentService;
   CheckoutCommand(this._paymentService);
 
-  // Prevent duplicate submissions while in-flight!
   @override
   ExecutionPolicy get policy => ExecutionPolicy.drop;
 
   @override
-  Future<void> execute(
-    CommandScope<CartState, CartEffect> scope,
-    CheckoutIntent intent,
-  ) async {
+  Future<void> execute(CommandScope<CartState, CartEffect> scope, CheckoutIntent intent) async {
     scope.updateState((s) => s.copyWith(isCheckingOut: true));
     try {
-      final orderId = await _paymentService.pay();
-      scope.updateState((s) => s.copyWith(isCheckingOut: false, count: 0));
+      final orderId = await _paymentService.pay(scope.state.items);
+      scope.updateState((s) => s.copyWith(isCheckingOut: false, items: const []));
       scope.emitSideEffect(OrderConfirmedEffect(orderId));
     } catch (e) {
       scope.updateState((s) => s.copyWith(isCheckingOut: false));
-      scope.emitSideEffect(ShowToastEffect(e.toString()));
+      scope.emitSideEffect(ShowToastEffect('Error en el pago: $e'));
     }
   }
 }
 ```
 
-### 4. Wire the Controller
-
-Use `bind` for formal commands, and the **Inline DSL** `on<I>` for quick UI state updates:
+#### B. `ExecutionPolicy.restart` + `debounce` (Búsqueda en Vivo de Productos)
 
 ```dart
-class CartController extends CommanderController<CartState, CartEffect> {
-  CartController(PaymentService paymentService)
-      : super(
-          const CartState(),
-          interceptors: const [LoggingCommandInterceptor()],
-        ) {
-    // 1. Formal commands with dependencies and policies:
-    bind(CheckoutCommand(paymentService));
+class SearchProductsCommand extends Command<SearchIntent, CartState, CartEffect> {
+  final CatalogService _catalog;
+  SearchProductsCommand(this._catalog);
 
-    // 2. Inline DSL for rapid, simple mutations:
-    on<IncrementIntent>((scope, intent) {
-      scope.updateState((s) => s.copyWith(count: s.count + 1));
-    });
+  @override
+  ExecutionPolicy get policy => ExecutionPolicy.restart;
+
+  // Espera 300ms de inactividad antes de disparar:
+  @override
+  Duration? get debounce => const Duration(milliseconds: 300);
+
+  @override
+  Future<void> execute(CommandScope<CartState, CartEffect> scope, SearchIntent intent) async {
+    // Si el usuario escribe antes de 300ms o llega una nueva búsqueda, la anterior se cancela
+    final results = await _catalog.search(intent.query, token: scope.cancellationToken);
+    scope.updateState((s) => s.copyWith(searchResults: results));
   }
 }
 ```
 
-### 5. Build Reactive Flutter UI
+#### C. Concurrencia Granular por Clave (`concurrencyKey`)
 
-#### 🧩 Widget Selection Guide
+Para aislar políticas por entidad (por ejemplo, evitar clicks duplicados sobre el **mismo producto** pero permitir agregar otros en paralelo):
 
-| Widget / Extension | Purpose | Generics | Rebuilds On |
+```dart
+class AddToCartCommand extends Command<AddToCartIntent, CartState, CartEffect> {
+  @override
+  ExecutionPolicy get policy => ExecutionPolicy.drop;
+
+  // La política DROP se aplica por cada ID de producto de forma independiente:
+  @override
+  Object? concurrencyKey(AddToCartIntent intent) => intent.productId;
+
+  @override
+  Future<void> execute(CommandScope<CartState, CartEffect> scope, AddToCartIntent intent) async {
+    await Future.delayed(const Duration(milliseconds: 200));
+    scope.updateState((s) => s.copyWith(items: [...s.items, intent.productId]));
+    scope.emitSideEffect(ShowToastEffect('Producto ${intent.productId} agregado'));
+  }
+}
+```
+
+#### D. `ExecutionPolicy.queue` (Encolado Secuencial de Métricas)
+
+```dart
+class TrackAnalyticsCommand extends Command<TrackAnalyticsIntent, CartState, CartEffect> {
+  final AnalyticsService _analytics;
+  TrackAnalyticsCommand(this._analytics);
+
+  @override
+  ExecutionPolicy get policy => ExecutionPolicy.queue;
+
+  @override
+  Future<void> execute(CommandScope<CartState, CartEffect> scope, TrackAnalyticsIntent intent) async {
+    await _analytics.logEvent(intent.event);
+  }
+}
+```
+
+---
+
+### 3. El Controlador (`CartController`)
+
+El controlador orquesta comandos formales con dependencias inyectadas mediante `bind()` y acciones simples de UI mediante el **Inline DSL** `on<I>()`:
+
+```dart
+class CartController extends CommanderController<CartState, CartEffect> {
+  CartController({
+    required PaymentService paymentService,
+    required CatalogService catalogService,
+    required AnalyticsService analyticsService,
+  }) : super(
+         const CartState(),
+         interceptors: const [LoggingCommandInterceptor()],
+       ) {
+    // 1. Registro de Comandos formales desacoplados
+    bind(CheckoutCommand(paymentService));
+    bind(SearchProductsCommand(catalogService));
+    bind(AddToCartCommand());
+    bind(TrackAnalyticsCommand(analyticsService));
+
+    // 2. Inline DSL para mutaciones directas de UI
+    on<ToggleVipIntent>((scope, intent) {
+      scope.updateState((s) => s.copyWith(isVip: !s.isVip));
+    });
+  }
+
+  // Manejo de errores global resiliente:
+  @override
+  void onError(Object error, StackTrace stackTrace, CommandIntent intent) {
+    emitSideEffect(ShowToastEffect('Ocurrió un error inesperado: $error'));
+  }
+}
+```
+
+---
+
+### 4. Integración en Flutter UI
+
+#### 🧩 Guía de Widgets Reactivos
+
+| Widget / Extensión | Propósito | Genéricos | Disparo de Rebuild |
 | :--- | :--- | :---: | :--- |
-| `CommanderStateBuilder<C, S>` | Rebuild when entire state changes | 2 (`C, S`) | Any state mutation |
-| `CommanderSelector<C, S, R>` | Rebuild only when a selected slice changes | 3 (`C, S, R`) | Selected slice equality (`==`) |
-| `CommanderListener<C, E>` | Execute side effects (navigation, dialogs, toasts) | 2 (`C, E`) | Never (side effects stream only) |
-| `CommanderStateConsumer<C, S, E>` | Combine full state builder + side effect listener | 3 (`C, S, E`) | Any state mutation |
-| `CommanderConsumer<C, S, R, E>` | Combine slice selector + side effect listener | 4 (`C, S, R, E`) | Selected slice equality (`==`) |
-| `context.select<C, S, R>(select)` | Read slice reactively directly inside `build()` | 3 (`C, S, R`) | Selected slice equality (`==`) |
-| `context.dispatch<C>(intent)` | Dispatch an intent from any `BuildContext` | 1 (`C`) | Never (fire-and-forget) |
+| `CommanderStateBuilder<C, S>` | Reconstruir ante cualquier cambio del estado completo | 2 (`C, S`) | Cualquier mutación de estado |
+| `CommanderSelector<C, S, R>` | Reconstruir **únicamente** cuando cambia la porción proyectada `R` | 3 (`C, S, R`) | Igualdad (`==`) del valor `R` |
+| `CommanderListener<C, E>` | Ejecutar efectos one-shot (Snackbars, navegación, modales) | 2 (`C, E`) | Nunca (solo escucha el stream) |
+| `CommanderStateConsumer<C, S, E>` | Combinar builder de estado completo con listener de efectos | 3 (`C, S, E`) | Cualquier mutación de estado |
+| `CommanderConsumer<C, S, R, E>` | Combinar selector de porción con listener de efectos | 4 (`C, S, R, E`) | Igualdad (`==`) del valor `R` |
+| `context.select<C, S, R>(select)` | Leer reactivamente una porción directamente en el método `build()` | 3 (`C, S, R`) | Igualdad (`==`) del valor `R` |
+| `context.dispatch<C>(intent)` | Despachar un intent desde cualquier `BuildContext` | 1 (`C`) | Nunca (fire-and-forget) |
+
+#### Implementación de la Pantalla de la Tienda (`CartPage`)
 
 ```dart
 class CartPage extends StatelessWidget {
@@ -247,44 +344,69 @@ class CartPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CommanderScope<CartController>(
-      create: (context) => CartController(PaymentService()),
+      create: (context) => CartController(
+        paymentService: PaymentService(),
+        catalogService: CatalogService(),
+        analyticsService: AnalyticsService(),
+      ),
       child: CommanderListener<CartController, CartEffect>(
         onEffect: (context, effect) {
           switch (effect) {
             case ShowToastEffect(:final message):
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
             case OrderConfirmedEffect(:final orderId):
-              Navigator.of(context).pushNamed('/order/$orderId');
+              Navigator.of(context).pushNamed('/order-success/$orderId');
           }
         },
         child: Scaffold(
-          appBar: AppBar(title: const Text('Store')),
-          body: Center(
+          appBar: AppBar(
+            title: const Text('Tienda Commander'),
+            actions: const [CartBadge()],
+          ),
+          body: Padding(
+            padding: const EdgeInsets.all(16.0),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Selector rebuild: Only rebuilds when count changes!
-                CommanderSelector<CartController, CartState, int>(
-                  select: (state) => state.count,
-                  builder: (context, count) => Text('Items: $count', style: const TextStyle(fontSize: 24)),
+                // Campo de búsqueda en vivo con debounce de 300ms
+                TextField(
+                  decoration: const InputDecoration(labelText: 'Buscar productos'),
+                  onChanged: (query) => context.dispatch<CartController>(SearchProductsIntent(query)),
                 ),
                 const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () => context.dispatch<CartController>(const IncrementIntent()),
-                  child: const Text('Add Item'),
+                // Reconstruye SOLO cuando cambian los resultados de búsqueda
+                Expanded(
+                  child: CommanderSelector<CartController, CartState, List<String>>(
+                    select: (state) => state.searchResults,
+                    builder: (context, results) {
+                      return ListView.builder(
+                        itemCount: results.length,
+                        itemBuilder: (context, index) {
+                          final item = results[index];
+                          return ListTile(
+                            title: Text(item),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.add_shopping_cart),
+                              onPressed: () => context.dispatch<CartController>(AddToCartIntent(item)),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
                 ),
-                const SizedBox(height: 8),
-                // Rebuilds only on isCheckingOut
+                // Botón de checkout con prevención de doble toque
                 CommanderSelector<CartController, CartState, bool>(
                   select: (state) => state.isCheckingOut,
-                  builder: (context, isCheckingOut) => ElevatedButton(
-                    onPressed: isCheckingOut
-                        ? null
-                        : () => context.dispatch<CartController>(const CheckoutIntent()),
-                    child: isCheckingOut
-                        ? const CircularProgressIndicator.adaptive()
-                        : const Text('Checkout'),
-                  ),
+                  builder: (context, isCheckingOut) {
+                    return ElevatedButton(
+                      onPressed: isCheckingOut
+                          ? null
+                          : () => context.dispatch<CartController>(const CheckoutIntent()),
+                      child: isCheckingOut
+                          ? const CircularProgressIndicator.adaptive()
+                          : const Text('Confirmar Compra'),
+                    );
+                  },
                 ),
               ],
             ),
@@ -295,149 +417,119 @@ class CartPage extends StatelessWidget {
   }
 }
 
-// 💡 Tip: In extracted widgets, read slices directly with context.select:
+// Widget extraído optimizado con context.select:
 class CartBadge extends StatelessWidget {
   const CartBadge({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Rebuilds ONLY when count changes!
-    final count = context.select<CartController, CartState, int>((s) => s.count);
-    return Badge(label: Text('$count'), child: const Icon(Icons.shopping_cart));
+    // Reconstruye ÚNICAMENTE cuando itemCount cambia:
+    final count = context.select<CartController, CartState, int>((s) => s.itemCount);
+
+    return Badge(
+      label: Text('$count'),
+      isLabelVisible: count > 0,
+      child: const Icon(Icons.shopping_cart_outlined),
+    );
   }
 }
 ```
 
 ---
 
-## 🧪 Atomic Testing with `TestCommandScope`
+### 5. Testing Atómico con `TestCommandScope`
 
-Testing in `flutter_commander` is deterministic and requires **zero mocks, zero streams, and zero widget pumping**:
+Las pruebas unitarias en `flutter_commander` son deterministas, no requieren streams asíncronos ni mocks del árbol de widgets:
 
 ```dart
-test('CheckoutCommand updates state and emits confirmation effect', () async {
-  final fakePaymentService = FakePaymentService();
-  final command = CheckoutCommand(fakePaymentService);
+test('CheckoutCommand procesa pago, limpia carrito y emite confirmacion', () async {
+  final fakePayment = FakePaymentService(mockOrderId: 'ORD-777');
+  final command = CheckoutCommand(fakePayment);
 
+  // Inicializamos el arnés con 2 productos en el carrito
   final testScope = TestCommandScope<CartState, CartEffect>(
-    const CartState(count: 2),
+    const CartState(items: ['MacBook Pro', 'Mouse']),
   );
 
+  // Ejecución directa del comando
   await command.execute(testScope, const CheckoutIntent());
 
-  // Assert chronological state transitions
+  // 1. Verificamos la secuencia cronológica de transiciones de estado:
   expect(testScope.states, [
-    const CartState(count: 2, isCheckingOut: true),
-    const CartState(count: 0, isCheckingOut: false),
+    const CartState(items: ['MacBook Pro', 'Mouse'], isCheckingOut: true),
+    const CartState(items: [], isCheckingOut: false),
   ]);
 
-  // Assert emitted side-effects
+  // 2. Verificamos los efectos one-shot emitidos:
   expect(testScope.effects, [
-    const OrderConfirmedEffect('ORD-123'),
+    const OrderConfirmedEffect('ORD-777'),
   ]);
 });
 ```
 
 ---
 
-## 🔍 Observability & Telemetry
+### 6. Observabilidad y Monitoreo Global
 
-### 🌐 Global `CommanderObserver`
-
-Monitor lifecycle events, state mutations, effects, and errors across the **entire application** by registering a global `CommanderObserver` in your `main()` entrypoint:
+Podés monitorear todo el ciclo de vida de la aplicación registrando un `CommanderObserver` en tu `main()`:
 
 ```dart
 void main() {
-  Commander.observer = AppCommanderObserver();
+  Commander.observer = AppStoreObserver();
   runApp(const MyApp());
 }
 
-class AppCommanderObserver extends CommanderObserver {
+class AppStoreObserver extends CommanderObserver {
   @override
   void onControllerCreated(CommanderController<dynamic, dynamic> controller) {
-    debugPrint('Created controller: ${controller.runtimeType}');
+    debugPrint('[Lifecycle] Creado: ${controller.runtimeType}');
   }
 
   @override
-  void onStateChanged(CommanderController<dynamic, dynamic> controller, dynamic oldState, dynamic newState) {
-    debugPrint('${controller.runtimeType} -> State updated: $newState');
+  void onStateChanged(
+    CommanderController<dynamic, dynamic>? controller,
+    dynamic oldState,
+    dynamic newState,
+  ) {
+    debugPrint('[State] ${controller.runtimeType} -> $newState');
   }
 
   @override
-  void onEffectEmitted(CommanderController<dynamic, dynamic> controller, dynamic effect) {
-    debugPrint('${controller.runtimeType} -> Effect emitted: $effect');
+  void onEffectEmitted(
+    CommanderController<dynamic, dynamic>? controller,
+    dynamic effect,
+  ) {
+    debugPrint('[Effect] ${controller.runtimeType} -> $effect');
   }
 
   @override
   void onError(
     CommanderController<dynamic, dynamic>? controller,
-    Command<dynamic, dynamic, dynamic> command,
-    CommandIntent intent,
+    Command<dynamic, dynamic, dynamic>? command,
+    CommandIntent? intent,
     Object error,
     StackTrace stackTrace,
   ) {
-    // Send unhandled command exceptions to Firebase Crashlytics or Sentry:
+    // Reporte automático a Crashlytics o Sentry:
     FirebaseCrashlytics.instance.recordError(error, stackTrace);
   }
 }
 ```
 
-### 🧩 Per-Controller `CommandInterceptor`
-
-Add `LoggingCommandInterceptor` (or custom interceptors) to individual controllers to log structured traces:
-
-```dart
-controller.addInterceptor(const LoggingCommandInterceptor());
-```
-
-Produces standard console logs:
-```text
-[flutter_commander] [Intent] CheckoutIntent -> [Command] CheckoutCommand (Policy: DROP)
-[flutter_commander] [State] CartState(count: 2, isCheckingOut: true)
-[flutter_commander] [Effect] OrderConfirmedEffect(orderId: ORD-9812)
-[flutter_commander] [State] CartState(count: 0, isCheckingOut: false)
-```
-
-Create custom interceptors by extending `CommandInterceptor` to benchmark performance, audit events, or inject custom middleware.
-
 ---
 
-## 🛡️ Resilient Error Handling
+### 7. Comparativa Arquitectónica
 
-By default, unhandled command exceptions are rethrown so that tests and callers can detect them. To handle errors gracefully without crashing the UI, override `onError` in your controller and emit side-effects directly:
-
-```dart
-class CartController extends CommanderController<CartState, CartEffect> {
-  CartController(...) : super(...) { ... }
-
-  @override
-  void onError(Object error, StackTrace stackTrace, CommandIntent intent) {
-    // 1. Report to telemetry:
-    Crashlytics.instance.recordError(error, stackTrace);
-
-    // 2. Emit an error toast or snackbar to the user:
-    emitSideEffect(ShowToastEffect('An unexpected error occurred.'));
-
-    // 3. Do not rethrow: the error is safely absorbed!
-  }
-}
-```
-
----
-
-## 📊 Architectural Comparison
-
-| Feature | flutter_commander | BLoC | Riverpod |
+| Característica | flutter_commander | BLoC | Riverpod |
 | :--- | :---: | :---: | :---: |
-| **Concurrency Control** | Declarative (`DROP`, `RESTART`, `QUEUE`, `CONCURRENT`) | Requires RxDart transformer boilerplate | Manual / cancel tokens |
-| **Separation of Concerns** | Single-responsibility `Command` classes | Monolithic event handlers in Bloc | Monolithic Notifier methods |
-| **One-Shot Effects** | First-class `SideEffect` stream | State flags or complex add-ons | State flags or external streams |
-| **Code Generation** | ❌ None required | ❌ Optional | ⚠️ Required / Recommended |
-| **Team Scalability** | High (Independent command files) | Low (Merge conflicts in Bloc) | Medium |
-| **Testability** | Atomic via `TestCommandScope` | `blocTest` (requires stream delays) | `ProviderContainer` mocking |
+| **Control de Concurrencia** | Declarativo (`DROP`, `RESTART`, `QUEUE`, `CONCURRENT`) | Requiere transformers de RxDart | Cancel tokens manuales |
+| **Separación de Responsabilidades** | Comandos aislados por caso de uso | Bloques centralizados con múltiples handlers | Notifiers con múltiples métodos |
+| **Canal de Efectos One-Shot** | Stream de `SideEffect` de primera clase | Banderas en estado o extensiones externas | Banderas en estado o Streams externos |
+| **Generación de Código** | ❌ Cero (Dart 3 puro) | ❌ Opcional | ⚠️ Recomendada |
+| **Testing de Lógica de Negocio** | Atómico y sincrónico vía `TestCommandScope` | `blocTest` (asíncrono con stream delays) | Mockeo de `ProviderContainer` |
 
 ---
 
-## 📄 License
+## 📄 Licencia
 
-MIT License. See [LICENSE](LICENSE) for details.
+MIT License. Ver [LICENSE](LICENSE) para más detalles.
