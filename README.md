@@ -335,6 +335,12 @@ class CartController extends CommanderController<CartState, CartEffect> {
 | `context.select<C, S, R>(select)` | Read slice reactively directly inside `build()` | 3 (`C, S, R`) | Value equality (`==`) of `R` |
 | `context.dispatch<C>(intent)` | Dispatch an intent from any `BuildContext` | 1 (`C`) | Never (fire-and-forget) |
 
+> **💡 Best Practice: `CommanderListener` vs. `CommanderStateConsumer`**
+>
+> - **Golden Rule:** *Listen to effects high up in the widget tree, rebuild UI as deep and localized as possible.*
+> - **Use `CommanderListener`** at the screen root (wrapping your `Scaffold`) when handling global side-effects (navigation, `SnackBar`, alerts). Pair it with localized `CommanderSelector` or `CommanderStateBuilder` widgets deeper in the tree so state changes never cause full-screen rebuilds.
+> - **Use `CommanderStateConsumer`** when a self-contained, localized widget (like an isolated card, modal dialog, or bottom sheet) needs **both** to react to effects and rebuild its own UI, saving you from manually nesting a listener and builder.
+
 #### Store Page Implementation (`CartPage`)
 
 ```dart
