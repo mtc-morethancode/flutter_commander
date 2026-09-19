@@ -101,14 +101,12 @@ class CommanderScope<C extends CommanderController<dynamic, dynamic>> extends St
 class _CommanderScopeState<C extends CommanderController<dynamic, dynamic>>
     extends State<CommanderScope<C>> {
   late C _controller;
-  bool _createdInternally = false;
 
   @override
   void initState() {
     super.initState();
     if (widget.create != null) {
       _controller = widget.create!(context);
-      _createdInternally = true;
     } else {
       _controller = widget.value!;
     }
@@ -132,7 +130,7 @@ class _CommanderScopeState<C extends CommanderController<dynamic, dynamic>>
   @override
   void dispose() {
     _controller.removeListener(_onStateChanged);
-    if (_createdInternally || widget.autoDispose) {
+    if (widget.autoDispose) {
       _controller.dispose();
     }
     super.dispose();

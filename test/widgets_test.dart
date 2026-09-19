@@ -429,5 +429,50 @@ void main() {
 
       controller.dispose();
     });
+
+    testWidgets('CommanderScope with create and autoDispose: false does not dispose controller on unmount', (tester) async {
+      final controller = AppController();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: CommanderScope<AppController>(
+            create: (_) => controller,
+            autoDispose: false,
+            child: const Text('Content'),
+          ),
+        ),
+      );
+
+      expect(controller.isDisposed, isFalse);
+
+      // Unmount CommanderScope
+      await tester.pumpWidget(const SizedBox.shrink());
+
+      expect(controller.isDisposed, isFalse);
+      controller.dispose();
+    });
+
+    testWidgets('CommanderBuilder didUpdateWidget updates displayed value when select callback changes', (tester) async {
+      final controller = AppController();
+
+      Widget buildHarness(String Function(AppState) selector) {
+        return MaterialApp(
+          home: CommanderBuilder<AppController, AppState, String>(
+            controller: controller,
+            select: selector,
+            builder: (context, val) => Text('Val: $val'),
+          ),
+        );
+      }
+
+      await tester.pumpWidget(buildHarness((s) => 'Count: ${s.count}'));
+      expect(find.text('Val: Count: 0'), findsOneWidget);
+
+      // Change selector to title without changing state
+      await tester.pumpWidget(buildHarness((s) => 'Title: ${s.title}'));
+      expect(find.text('Val: Title: App'), findsOneWidget);
+
+      controller.dispose();
+    });
   });
 }

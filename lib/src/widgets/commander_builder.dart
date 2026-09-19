@@ -65,6 +65,10 @@ class _CommanderBuilderState<C extends CommanderController<S, dynamic>, S, R>
     super.didUpdateWidget(oldWidget);
     if (widget.controller != oldWidget.controller) {
       _subscribe();
+    } else if (widget.select != oldWidget.select) {
+      if (_controller != null) {
+        _currentValue = _computeValue(_controller!.state);
+      }
     }
   }
 
