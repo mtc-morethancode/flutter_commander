@@ -237,7 +237,7 @@ class CartController extends CommanderController<CartState, CartEffect> {
 | `CommanderListener<C, E>` | Execute side effects (navigation, dialogs, toasts) | 2 (`C, E`) | Never (side effects stream only) |
 | `CommanderStateConsumer<C, S, E>` | Combine full state builder + side effect listener | 3 (`C, S, E`) | Any state mutation |
 | `CommanderConsumer<C, S, R, E>` | Combine slice selector + side effect listener | 4 (`C, S, R, E`) | Selected slice equality (`==`) |
-| `context.select<C, R>(select)` | Read slice reactively directly inside `build()` | 2 (`C, R`) | Selected slice equality (`==`) |
+| `context.select<C, S, R>(select)` | Read slice reactively directly inside `build()` | 3 (`C, S, R`) | Selected slice equality (`==`) |
 | `context.dispatch<C>(intent)` | Dispatch an intent from any `BuildContext` | 1 (`C`) | Never (fire-and-forget) |
 
 ```dart
@@ -302,7 +302,7 @@ class CartBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Rebuilds ONLY when count changes!
-    final count = context.select<CartController, int>((s) => s.count);
+    final count = context.select<CartController, CartState, int>((s) => s.count);
     return Badge(label: Text('$count'), child: const Icon(Icons.shopping_cart));
   }
 }
