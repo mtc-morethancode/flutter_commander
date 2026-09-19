@@ -16,7 +16,7 @@ flutter pub add flutter_commander
 
 ---
 
-## ⚡ 3-Minute Quickstart (For the Impatient)
+## ⚡ 3-Minute Quickstart
 
 In a rush? Here is the entire unidirectional MVI flow in a single, self-contained 40-line snippet:
 
