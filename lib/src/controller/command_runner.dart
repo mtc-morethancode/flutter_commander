@@ -5,15 +5,14 @@ import '../core/cancellation_token.dart';
 import '../core/command.dart';
 import '../core/command_interceptor.dart';
 import '../core/command_scope.dart';
-import '../core/commander_observer.dart';
 import '../core/execution_policy.dart';
 import '../core/intent.dart';
-import 'commander_controller.dart';
+import 'commander.dart';
 
 /// Runner responsible for orchestrating command execution under their specified
 /// [ExecutionPolicy], managing queues, cancellation tokens, debounce timers, and interceptors.
 class CommandRunner<S, E> {
-  final CommanderController<dynamic, dynamic>? _controller;
+  final Commander<dynamic, dynamic>? _commander;
   final S Function() _getState;
   final void Function(S Function(S current) reducer) _updateState;
   final void Function(E effect) _emitSideEffect;
@@ -36,9 +35,9 @@ class CommandRunner<S, E> {
 
   bool _isDisposed = false;
 
-  /// Creates a [CommandRunner] wired to the controller's state, effect channels, and error handler.
+  /// Creates a [CommandRunner] wired to the commander's state, effect channels, and error handler.
   CommandRunner({
-    required CommanderController<dynamic, dynamic>? controller,
+    required Commander<dynamic, dynamic>? commander,
     required S Function() getState,
     required void Function(S Function(S current) reducer) updateState,
     required void Function(E effect) emitSideEffect,
@@ -49,7 +48,7 @@ class CommandRunner<S, E> {
       Object error,
       StackTrace stackTrace,
     )? onError,
-  })  : _controller = controller,
+  })  : _commander = commander,
         _getState = getState,
         _updateState = updateState,
         _emitSideEffect = emitSideEffect,
@@ -250,7 +249,7 @@ class CommandRunner<S, E> {
       cancellationToken: token,
     );
 
-    Commander.observer?.onBeforeExecute(_controller, command, intent);
+    Commander.observer?.onBeforeExecute(_commander, command, intent);
     for (final interceptor in _interceptors) {
       try {
         interceptor.onBeforeExecute(command, intent);
@@ -263,7 +262,7 @@ class CommandRunner<S, E> {
       // Operation was cancelled collaboratively; expected flow for restart/cancellation.
     } catch (error, stackTrace) {
       Commander.observer
-          ?.onError(_controller, command, intent, error, stackTrace);
+          ?.onError(_commander, command, intent, error, stackTrace);
       for (final interceptor in _interceptors) {
         try {
           interceptor.onError(command, intent, error, stackTrace);
@@ -276,7 +275,7 @@ class CommandRunner<S, E> {
       }
     } finally {
       _inFlightTokens.remove(token);
-      Commander.observer?.onAfterExecute(_controller, command, intent);
+      Commander.observer?.onAfterExecute(_commander, command, intent);
       for (final interceptor in _interceptors) {
         try {
           interceptor.onAfterExecute(command, intent);
@@ -317,7 +316,7 @@ class CommandRunner<S, E> {
         item.token.cancel();
         if (!item.completer.isCompleted) {
           item.completer.completeError(
-            const CancellationException('CommanderController was disposed.'),
+            const CancellationException('Commander was disposed.'),
           );
         }
       }
