@@ -62,7 +62,8 @@ class AppController extends CommanderController<AppState, AppEffect> {
 
 void main() {
   group('Commander Widgets', () {
-    testWidgets('CommanderScope provides controller and auto-disposes', (tester) async {
+    testWidgets('CommanderScope provides controller and auto-disposes',
+        (tester) async {
       late AppController capturedController;
 
       await tester.pumpWidget(
@@ -87,7 +88,8 @@ void main() {
       expect(capturedController.isDisposed, isTrue);
     });
 
-    testWidgets('CommanderScope.value does not dispose shared controller', (tester) async {
+    testWidgets('CommanderScope.value does not dispose shared controller',
+        (tester) async {
       final sharedController = AppController();
 
       await tester.pumpWidget(
@@ -95,7 +97,8 @@ void main() {
           home: CommanderScope<AppController>.value(
             value: sharedController,
             child: Builder(
-              builder: (context) => Text('Count: ${context.commander<AppController>().state.count}'),
+              builder: (context) => Text(
+                  'Count: ${context.commander<AppController>().state.count}'),
             ),
           ),
         ),
@@ -110,7 +113,8 @@ void main() {
       sharedController.dispose();
     });
 
-    testWidgets('CommanderBuilder with select only rebuilds when selected slice changes',
+    testWidgets(
+        'CommanderBuilder with select only rebuilds when selected slice changes',
         (tester) async {
       final controller = AppController();
       var buildCount = 0;
@@ -150,7 +154,8 @@ void main() {
       controller.dispose();
     });
 
-    testWidgets('CommanderBuilder respects buildWhen condition', (tester) async {
+    testWidgets('CommanderBuilder respects buildWhen condition',
+        (tester) async {
       final controller = AppController();
       var buildCount = 0;
 
@@ -160,7 +165,8 @@ void main() {
             value: controller,
             child: CommanderBuilder<AppController, AppState, int>(
               select: (state) => state.count,
-              buildWhen: (prev, curr) => curr % 2 == 0, // only rebuild on even numbers
+              buildWhen: (prev, curr) =>
+                  curr % 2 == 0, // only rebuild on even numbers
               builder: (context, count) {
                 buildCount++;
                 return Text('Even count: $count');
@@ -188,7 +194,9 @@ void main() {
       controller.dispose();
     });
 
-    testWidgets('CommanderListener handles side effects without rebuilding child', (tester) async {
+    testWidgets(
+        'CommanderListener handles side effects without rebuilding child',
+        (tester) async {
       final controller = AppController();
       final receivedEffects = <String>[];
       var childBuildCount = 0;
@@ -224,7 +232,8 @@ void main() {
       controller.dispose();
     });
 
-    testWidgets('CommanderConsumer combines builder and listener seamlessly', (tester) async {
+    testWidgets('CommanderConsumer combines builder and listener seamlessly',
+        (tester) async {
       final controller = AppController();
       final receivedEffects = <String>[];
 
@@ -256,7 +265,9 @@ void main() {
       controller.dispose();
     });
 
-    testWidgets('CommanderStateBuilder renders full state with only 2 generic types', (tester) async {
+    testWidgets(
+        'CommanderStateBuilder renders full state with only 2 generic types',
+        (tester) async {
       final controller = AppController();
 
       await tester.pumpWidget(
@@ -264,7 +275,8 @@ void main() {
           home: CommanderScope<AppController>.value(
             value: controller,
             child: CommanderStateBuilder<AppController, AppState>(
-              builder: (context, state) => Text('State Count: ${state.count} - ${state.title}'),
+              builder: (context, state) =>
+                  Text('State Count: ${state.count} - ${state.title}'),
             ),
           ),
         ),
@@ -280,7 +292,9 @@ void main() {
       controller.dispose();
     });
 
-    testWidgets('CommanderSelector renders slice and only rebuilds when slice changes', (tester) async {
+    testWidgets(
+        'CommanderSelector renders slice and only rebuilds when slice changes',
+        (tester) async {
       final controller = AppController();
       int buildCount = 0;
 
@@ -316,7 +330,9 @@ void main() {
       controller.dispose();
     });
 
-    testWidgets('CommanderStateConsumer combines listener and full-state builder with 3 generics', (tester) async {
+    testWidgets(
+        'CommanderStateConsumer combines listener and full-state builder with 3 generics',
+        (tester) async {
       final controller = AppController();
       final List<String> receivedEffects = [];
 
@@ -328,7 +344,8 @@ void main() {
               onEffect: (context, effect) {
                 receivedEffects.add(effect.snackbarText);
               },
-              builder: (context, state) => Text('StateConsumer: ${state.count}'),
+              builder: (context, state) =>
+                  Text('StateConsumer: ${state.count}'),
             ),
           ),
         ),
@@ -336,7 +353,8 @@ void main() {
 
       expect(find.text('StateConsumer: 0'), findsOneWidget);
 
-      await controller.dispatch(const NotifyEffectIntent('StateConsumer Toast'));
+      await controller
+          .dispatch(const NotifyEffectIntent('StateConsumer Toast'));
       await tester.pump();
       expect(receivedEffects, equals(['StateConsumer Toast']));
 
@@ -347,7 +365,9 @@ void main() {
       controller.dispose();
     });
 
-    testWidgets('CommanderBuilder correctly unsubscribes when controller changes from inherited to explicit', (tester) async {
+    testWidgets(
+        'CommanderBuilder correctly unsubscribes when controller changes from inherited to explicit',
+        (tester) async {
       final controller1 = AppController();
       final controller2 = AppController();
 
@@ -385,7 +405,9 @@ void main() {
       controller2.dispose();
     });
 
-    testWidgets('CommanderBuildContextX context.dispatch and context.select work', (tester) async {
+    testWidgets(
+        'CommanderBuildContextX context.dispatch and context.select work',
+        (tester) async {
       final controller = AppController();
 
       await tester.pumpWidget(
@@ -397,7 +419,8 @@ void main() {
                 children: [
                   Builder(
                     builder: (context) {
-                      final title = context.select<AppController, AppState, String>(
+                      final title =
+                          context.select<AppController, AppState, String>(
                         (state) => state.title,
                       );
                       return Text('Title: $title');
@@ -407,7 +430,8 @@ void main() {
                     builder: (context) {
                       return ElevatedButton(
                         onPressed: () {
-                          context.dispatch<AppController>(const SetTitleIntent('Updated!'));
+                          context.dispatch<AppController>(
+                              const SetTitleIntent('Updated!'));
                         },
                         child: const Text('Change Title'),
                       );
@@ -430,7 +454,9 @@ void main() {
       controller.dispose();
     });
 
-    testWidgets('CommanderScope with create and autoDispose: false does not dispose controller on unmount', (tester) async {
+    testWidgets(
+        'CommanderScope with create and autoDispose: false does not dispose controller on unmount',
+        (tester) async {
       final controller = AppController();
 
       await tester.pumpWidget(
@@ -452,7 +478,9 @@ void main() {
       controller.dispose();
     });
 
-    testWidgets('CommanderBuilder didUpdateWidget updates displayed value when select callback changes', (tester) async {
+    testWidgets(
+        'CommanderBuilder didUpdateWidget updates displayed value when select callback changes',
+        (tester) async {
       final controller = AppController();
 
       Widget buildHarness(String Function(AppState) selector) {

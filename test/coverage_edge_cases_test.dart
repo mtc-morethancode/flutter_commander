@@ -29,19 +29,22 @@ class QueuedSlowIntent extends CommandIntent {
 
 class BaseIntentCommand extends Command<BaseIntent, DummyState, DummyEffect> {
   @override
-  Future<void> execute(CommandScope<DummyState, DummyEffect> scope, BaseIntent intent) async {
+  Future<void> execute(
+      CommandScope<DummyState, DummyEffect> scope, BaseIntent intent) async {
     scope.updateState((s) => DummyState(s.count + 1));
   }
 }
 
-class QueuedSlowCommand extends Command<QueuedSlowIntent, DummyState, DummyEffect> {
+class QueuedSlowCommand
+    extends Command<QueuedSlowIntent, DummyState, DummyEffect> {
   final Completer<void> completer = Completer<void>();
 
   @override
   ExecutionPolicy get policy => ExecutionPolicy.queue;
 
   @override
-  Future<void> execute(CommandScope<DummyState, DummyEffect> scope, QueuedSlowIntent intent) async {
+  Future<void> execute(CommandScope<DummyState, DummyEffect> scope,
+      QueuedSlowIntent intent) async {
     await completer.future;
   }
 }
@@ -77,8 +80,12 @@ void main() {
 
       expect(() => interceptor.onBeforeExecute(cmd, intent), returnsNormally);
       expect(() => interceptor.onAfterExecute(cmd, intent), returnsNormally);
-      expect(() => interceptor.onStateChanged(const DummyState(0), const DummyState(1)), returnsNormally);
-      expect(() => interceptor.onEffectEmitted(const DummyEffect()), returnsNormally);
+      expect(
+          () => interceptor.onStateChanged(
+              const DummyState(0), const DummyState(1)),
+          returnsNormally);
+      expect(() => interceptor.onEffectEmitted(const DummyEffect()),
+          returnsNormally);
       expect(
         () => interceptor.onError(cmd, intent, Exception(), StackTrace.current),
         returnsNormally,
@@ -121,7 +128,8 @@ void main() {
       );
     });
 
-    test('CommandRegistry polymorphic subtype resolution and contains check', () async {
+    test('CommandRegistry polymorphic subtype resolution and contains check',
+        () async {
       final controller = DummyController();
       // BaseIntentCommand is registered for BaseIntent, DerivedIntent extends BaseIntent
       await controller.dispatch(const DerivedIntent());
@@ -129,14 +137,17 @@ void main() {
       controller.dispose();
     });
 
-    test('Queue cancellation upon controller disposal when items are pending', () async {
+    test('Queue cancellation upon controller disposal when items are pending',
+        () async {
       final controller = DummyController();
 
       // Dispatch 2 queued intents
-      unawaited(controller.dispatch(const QueuedSlowIntent()).catchError((_) {}));
+      unawaited(
+          controller.dispatch(const QueuedSlowIntent()).catchError((_) {}));
       final f2 = controller.dispatch(const QueuedSlowIntent());
 
-      final expectation = expectLater(f2, throwsA(isA<CancellationException>()));
+      final expectation =
+          expectLater(f2, throwsA(isA<CancellationException>()));
 
       // Dispose while queue is blocked
       controller.dispose();
@@ -149,7 +160,8 @@ void main() {
       expect(slowCmd.policy, equals(ExecutionPolicy.concurrent));
     });
 
-    testWidgets('CommanderScope.of with listen: true finds and rebuilds', (tester) async {
+    testWidgets('CommanderScope.of with listen: true finds and rebuilds',
+        (tester) async {
       final controller = DummyController();
 
       await tester.pumpWidget(
@@ -158,7 +170,8 @@ void main() {
             value: controller,
             child: Builder(
               builder: (context) {
-                final c = CommanderScope.of<DummyController>(context, listen: true);
+                final c =
+                    CommanderScope.of<DummyController>(context, listen: true);
                 return Text('Count: ${c.state.count}');
               },
             ),
@@ -175,13 +188,15 @@ void main() {
       controller.dispose();
     });
 
-    testWidgets('CommanderScope.of throws FlutterError when scope not found', (tester) async {
+    testWidgets('CommanderScope.of throws FlutterError when scope not found',
+        (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Builder(
             builder: (context) {
               expect(
-                () => CommanderScope.of<DummyController>(context, listen: false),
+                () =>
+                    CommanderScope.of<DummyController>(context, listen: false),
                 throwsA(isA<FlutterError>()),
               );
               expect(
@@ -195,7 +210,8 @@ void main() {
       );
     });
 
-    testWidgets('CommanderScope didUpdateWidget updates controller listener', (tester) async {
+    testWidgets('CommanderScope didUpdateWidget updates controller listener',
+        (tester) async {
       final controllerA = DummyController();
       final controllerB = DummyController();
 
@@ -205,7 +221,8 @@ void main() {
             value: controllerA,
             child: Builder(
               builder: (context) {
-                final c = CommanderScope.of<DummyController>(context, listen: true);
+                final c =
+                    CommanderScope.of<DummyController>(context, listen: true);
                 return Text('Count: ${c.state.count}');
               },
             ),
@@ -222,7 +239,8 @@ void main() {
             value: controllerB,
             child: Builder(
               builder: (context) {
-                final c = CommanderScope.of<DummyController>(context, listen: true);
+                final c =
+                    CommanderScope.of<DummyController>(context, listen: true);
                 return Text('Count: ${c.state.count}');
               },
             ),
@@ -238,7 +256,8 @@ void main() {
       controllerB.dispose();
     });
 
-    testWidgets('CommanderBuilder didUpdateWidget updates controller instance', (tester) async {
+    testWidgets('CommanderBuilder didUpdateWidget updates controller instance',
+        (tester) async {
       final controller1 = DummyController();
       final controller2 = DummyController();
 
@@ -272,7 +291,8 @@ void main() {
       controller2.dispose();
     });
 
-    testWidgets('CommanderListener didUpdateWidget updates controller instance', (tester) async {
+    testWidgets('CommanderListener didUpdateWidget updates controller instance',
+        (tester) async {
       final controller1 = DummyController();
       final controller2 = DummyController();
       var received = 0;
@@ -301,14 +321,17 @@ void main() {
       controller2.dispose();
     });
 
-    test('Additional edge cases: contains, isDisposed, TestCommandScope initialState, InlineCommand toString', () {
+    test(
+        'Additional edge cases: contains, isDisposed, TestCommandScope initialState, InlineCommand toString',
+        () {
       final registry = CommandRegistry<DummyState, DummyEffect>();
       registry.registerInline<DerivedIntent>((scope, intent) {});
       expect(registry.contains<DerivedIntent>(), isTrue);
       final inlineCmd = registry.find(const DerivedIntent());
       expect(inlineCmd.toString(), contains('InlineCommand'));
 
-      final testScope = TestCommandScope<DummyState, DummyEffect>(const DummyState(42));
+      final testScope =
+          TestCommandScope<DummyState, DummyEffect>(const DummyState(42));
       expect(testScope.initialState, equals(const DummyState(42)));
 
       final controller = DummyController();
@@ -332,17 +355,20 @@ class QueuedFailingIntent extends CommandIntent {
   const QueuedFailingIntent();
 }
 
-class QueuedFailingCommand extends Command<QueuedFailingIntent, DummyState, DummyEffect> {
+class QueuedFailingCommand
+    extends Command<QueuedFailingIntent, DummyState, DummyEffect> {
   @override
   ExecutionPolicy get policy => ExecutionPolicy.queue;
 
   @override
-  Future<void> execute(CommandScope<DummyState, DummyEffect> scope, QueuedFailingIntent intent) async {
+  Future<void> execute(CommandScope<DummyState, DummyEffect> scope,
+      QueuedFailingIntent intent) async {
     throw Exception('Queue error test');
   }
 }
 
-class CommanderControllerWithFailingQueue extends CommanderController<DummyState, DummyEffect> {
+class CommanderControllerWithFailingQueue
+    extends CommanderController<DummyState, DummyEffect> {
   CommanderControllerWithFailingQueue() : super(const DummyState(0)) {
     bind(QueuedFailingCommand());
   }

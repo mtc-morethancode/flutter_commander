@@ -74,7 +74,8 @@ class SubmitOrderIntent extends CommandIntent {
   const SubmitOrderIntent(this.orderId);
 }
 
-class SubmitOrderCommand extends Command<SubmitOrderIntent, OrderState, OrderEffect> {
+class SubmitOrderCommand
+    extends Command<SubmitOrderIntent, OrderState, OrderEffect> {
   final Future<void> Function(String id)? onApiCall;
 
   SubmitOrderCommand({this.onApiCall});
@@ -91,7 +92,8 @@ class SubmitOrderCommand extends Command<SubmitOrderIntent, OrderState, OrderEff
     if (onApiCall != null) {
       await onApiCall!(intent.orderId);
     }
-    scope.updateState((s) => s.copyWith(isLoading: false, isSuccess: true, orderId: intent.orderId));
+    scope.updateState((s) =>
+        s.copyWith(isLoading: false, isSuccess: true, orderId: intent.orderId));
     scope.emitSideEffect(NavigateToConfirmationEffect(intent.orderId));
   }
 }
@@ -100,11 +102,13 @@ void main() {
   group('TestCommandScope Harness', () {
     test('verifies atomic command execution exactly as specified', () async {
       final command = SubmitOrderCommand();
-      final testScope = TestCommandScope<OrderState, OrderEffect>(OrderState.initial());
+      final testScope =
+          TestCommandScope<OrderState, OrderEffect>(OrderState.initial());
 
       await command.execute(testScope, const SubmitOrderIntent('id_123'));
 
-      final expectedLoadingState = OrderState.initial().copyWith(isLoading: true);
+      final expectedLoadingState =
+          OrderState.initial().copyWith(isLoading: true);
       final expectedSuccessState = OrderState.initial().copyWith(
         isLoading: false,
         isSuccess: true,
@@ -123,7 +127,8 @@ void main() {
     });
 
     test('cancellation suppresses state mutations and effect emissions', () {
-      final testScope = TestCommandScope<OrderState, OrderEffect>(OrderState.initial());
+      final testScope =
+          TestCommandScope<OrderState, OrderEffect>(OrderState.initial());
 
       testScope.updateState((s) => s.copyWith(isLoading: true));
       expect(testScope.states.length, equals(1));
@@ -140,7 +145,8 @@ void main() {
     });
 
     test('reset() restores initial state and empties recorded collections', () {
-      final testScope = TestCommandScope<OrderState, OrderEffect>(OrderState.initial());
+      final testScope =
+          TestCommandScope<OrderState, OrderEffect>(OrderState.initial());
 
       testScope.updateState((s) => s.copyWith(isLoading: true));
       testScope.emitSideEffect(const NavigateToConfirmationEffect('1'));
@@ -156,7 +162,8 @@ void main() {
     });
 
     test('hasState and hasEffect helper predicates work', () {
-      final testScope = TestCommandScope<OrderState, OrderEffect>(OrderState.initial());
+      final testScope =
+          TestCommandScope<OrderState, OrderEffect>(OrderState.initial());
 
       testScope.updateState((s) => s.copyWith(orderId: 'xyz'));
       testScope.emitSideEffect(const NavigateToConfirmationEffect('xyz'));
@@ -165,11 +172,13 @@ void main() {
       expect(testScope.hasState((s) => s.orderId == 'abc'), isFalse);
 
       expect(
-        testScope.hasEffect((e) => e is NavigateToConfirmationEffect && e.orderId == 'xyz'),
+        testScope.hasEffect(
+            (e) => e is NavigateToConfirmationEffect && e.orderId == 'xyz'),
         isTrue,
       );
       expect(
-        testScope.hasEffect((e) => e is NavigateToConfirmationEffect && e.orderId == 'nonexistent'),
+        testScope.hasEffect((e) =>
+            e is NavigateToConfirmationEffect && e.orderId == 'nonexistent'),
         isFalse,
       );
     });

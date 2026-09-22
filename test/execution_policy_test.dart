@@ -63,11 +63,13 @@ class DropCommand extends Command<DropIntent, TestState, TestEffect> {
   ExecutionPolicy get policy => ExecutionPolicy.drop;
 
   @override
-  Future<void> execute(CommandScope<TestState, TestEffect> scope, DropIntent intent) async {
+  Future<void> execute(
+      CommandScope<TestState, TestEffect> scope, DropIntent intent) async {
     executionsStarted++;
     await blocker.future;
     executionsCompleted++;
-    scope.updateState((s) => s.copyWith(logs: [...s.logs, 'drop_${intent.id}']));
+    scope
+        .updateState((s) => s.copyWith(logs: [...s.logs, 'drop_${intent.id}']));
   }
 }
 
@@ -80,7 +82,8 @@ class RestartCommand extends Command<RestartIntent, TestState, TestEffect> {
   ExecutionPolicy get policy => ExecutionPolicy.restart;
 
   @override
-  Future<void> execute(CommandScope<TestState, TestEffect> scope, RestartIntent intent) async {
+  Future<void> execute(
+      CommandScope<TestState, TestEffect> scope, RestartIntent intent) async {
     startedQueries.add(intent.query);
     final completer = Completer<void>();
     stepCompleters.add(completer);
@@ -91,7 +94,8 @@ class RestartCommand extends Command<RestartIntent, TestState, TestEffect> {
     if (scope.isCancelled) return;
 
     completedQueries.add(intent.query);
-    scope.updateState((s) => s.copyWith(logs: [...s.logs, 'restart_${intent.query}']));
+    scope.updateState(
+        (s) => s.copyWith(logs: [...s.logs, 'restart_${intent.query}']));
   }
 }
 
@@ -102,7 +106,8 @@ class QueueCommand extends Command<QueueIntent, TestState, TestEffect> {
   ExecutionPolicy get policy => ExecutionPolicy.queue;
 
   @override
-  Future<void> execute(CommandScope<TestState, TestEffect> scope, QueueIntent intent) async {
+  Future<void> execute(
+      CommandScope<TestState, TestEffect> scope, QueueIntent intent) async {
     // Add small async yield to simulate I/O
     await Future<void>.delayed(const Duration(milliseconds: 10));
     processedOrder.add(intent.item);
@@ -110,7 +115,8 @@ class QueueCommand extends Command<QueueIntent, TestState, TestEffect> {
   }
 }
 
-class ConcurrentCommand extends Command<ConcurrentIntent, TestState, TestEffect> {
+class ConcurrentCommand
+    extends Command<ConcurrentIntent, TestState, TestEffect> {
   int concurrentRunning = 0;
   int maxConcurrentSeen = 0;
 
@@ -118,7 +124,8 @@ class ConcurrentCommand extends Command<ConcurrentIntent, TestState, TestEffect>
   ExecutionPolicy get policy => ExecutionPolicy.concurrent;
 
   @override
-  Future<void> execute(CommandScope<TestState, TestEffect> scope, ConcurrentIntent intent) async {
+  Future<void> execute(CommandScope<TestState, TestEffect> scope,
+      ConcurrentIntent intent) async {
     concurrentRunning++;
     if (concurrentRunning > maxConcurrentSeen) {
       maxConcurrentSeen = concurrentRunning;
@@ -128,7 +135,8 @@ class ConcurrentCommand extends Command<ConcurrentIntent, TestState, TestEffect>
   }
 }
 
-class ConcurrencyTestController extends CommanderController<TestState, TestEffect> {
+class ConcurrencyTestController
+    extends CommanderController<TestState, TestEffect> {
   final DropCommand dropCommand;
   final RestartCommand restartCommand;
   final QueueCommand queueCommand;
@@ -199,7 +207,8 @@ void main() {
 
       // Dispatch query B immediately (restarts)
       unawaited(controller.dispatch(const RestartIntent('flutter_commander')));
-      expect(restartCommand.startedQueries, equals(['flutter', 'flutter_commander']));
+      expect(restartCommand.startedQueries,
+          equals(['flutter', 'flutter_commander']));
 
       // Complete the first query's step (it was cancelled so it should NOT record complete)
       restartCommand.stepCompleters[0].complete();
@@ -224,7 +233,8 @@ void main() {
       expect(controller.state.count, equals(3));
     });
 
-    test('CONCURRENT: runs invocations simultaneously without blocking', () async {
+    test('CONCURRENT: runs invocations simultaneously without blocking',
+        () async {
       final f1 = controller.dispatch(const ConcurrentIntent(1));
       final f2 = controller.dispatch(const ConcurrentIntent(2));
       final f3 = controller.dispatch(const ConcurrentIntent(3));

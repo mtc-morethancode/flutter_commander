@@ -24,7 +24,8 @@ class ItemState {
           listEquals(logs, other.logs);
 
   @override
-  int get hashCode => Object.hash(Object.hashAll(items.entries), Object.hashAll(logs));
+  int get hashCode =>
+      Object.hash(Object.hashAll(items.entries), Object.hashAll(logs));
 }
 
 class ItemEffect {
@@ -82,11 +83,13 @@ class KeyedDropCommand extends Command<KeyedDropIntent, ItemState, ItemEffect> {
     final blocker = blockers.putIfAbsent(intent.keyId, () => Completer<void>());
     await blocker.future;
     completedCount[intent.keyId] = (completedCount[intent.keyId] ?? 0) + 1;
-    scope.updateState((s) => s.copyWith(logs: [...s.logs, 'drop_${intent.keyId}_${intent.value}']));
+    scope.updateState((s) =>
+        s.copyWith(logs: [...s.logs, 'drop_${intent.keyId}_${intent.value}']));
   }
 }
 
-class KeyedRestartCommand extends Command<KeyedRestartIntent, ItemState, ItemEffect> {
+class KeyedRestartCommand
+    extends Command<KeyedRestartIntent, ItemState, ItemEffect> {
   final Map<String, List<Completer<void>>> stepCompleters = {};
   final List<String> started = [];
   final List<String> completed = [];
@@ -111,11 +114,13 @@ class KeyedRestartCommand extends Command<KeyedRestartIntent, ItemState, ItemEff
     if (scope.isCancelled) return;
 
     completed.add('${intent.keyId}:${intent.query}');
-    scope.updateState((s) => s.copyWith(logs: [...s.logs, 'restart_${intent.keyId}_${intent.query}']));
+    scope.updateState((s) => s.copyWith(
+        logs: [...s.logs, 'restart_${intent.keyId}_${intent.query}']));
   }
 }
 
-class KeyedQueueCommand extends Command<KeyedQueueIntent, ItemState, ItemEffect> {
+class KeyedQueueCommand
+    extends Command<KeyedQueueIntent, ItemState, ItemEffect> {
   final List<String> executionOrder = [];
 
   @override
@@ -131,11 +136,13 @@ class KeyedQueueCommand extends Command<KeyedQueueIntent, ItemState, ItemEffect>
   ) async {
     await Future<void>.delayed(const Duration(milliseconds: 15));
     executionOrder.add('${intent.keyId}:${intent.step}');
-    scope.updateState((s) => s.copyWith(logs: [...s.logs, 'queue_${intent.keyId}_${intent.step}']));
+    scope.updateState((s) =>
+        s.copyWith(logs: [...s.logs, 'queue_${intent.keyId}_${intent.step}']));
   }
 }
 
-class LongRunningConcurrentCommand extends Command<ConcurrentTaskIntent, ItemState, ItemEffect> {
+class LongRunningConcurrentCommand
+    extends Command<ConcurrentTaskIntent, ItemState, ItemEffect> {
   final Completer<void> blocker = Completer<void>();
   bool wasCancelled = false;
 
@@ -165,7 +172,8 @@ class AlwaysFailsCommand extends Command<FailingIntent, ItemState, ItemEffect> {
 }
 
 // Controller with custom onError handling
-class ErrorHandlingController extends CommanderController<ItemState, ItemEffect> {
+class ErrorHandlingController
+    extends CommanderController<ItemState, ItemEffect> {
   final List<String> caughtErrors = [];
 
   ErrorHandlingController() : super(const ItemState()) {
@@ -180,7 +188,8 @@ class ErrorHandlingController extends CommanderController<ItemState, ItemEffect>
 }
 
 // Controller with default onError handling (rethrow)
-class DefaultErrorController extends CommanderController<ItemState, ItemEffect> {
+class DefaultErrorController
+    extends CommanderController<ItemState, ItemEffect> {
   DefaultErrorController() : super(const ItemState()) {
     bind(AlwaysFailsCommand());
   }
@@ -191,7 +200,8 @@ class DebounceIntent extends CommandIntent {
   const DebounceIntent(this.query);
 }
 
-class DebouncedSearchCommand extends Command<DebounceIntent, ItemState, ItemEffect> {
+class DebouncedSearchCommand
+    extends Command<DebounceIntent, ItemState, ItemEffect> {
   final List<String> executedQueries = [];
 
   @override
@@ -203,7 +213,8 @@ class DebouncedSearchCommand extends Command<DebounceIntent, ItemState, ItemEffe
     DebounceIntent intent,
   ) async {
     executedQueries.add(intent.query);
-    scope.updateState((s) => s.copyWith(logs: [...s.logs, 'searched_${intent.query}']));
+    scope.updateState(
+        (s) => s.copyWith(logs: [...s.logs, 'searched_${intent.query}']));
   }
 }
 
@@ -213,7 +224,8 @@ class KeyedDebounceIntent extends CommandIntent {
   const KeyedDebounceIntent(this.tab, this.query);
 }
 
-class KeyedDebouncedCommand extends Command<KeyedDebounceIntent, ItemState, ItemEffect> {
+class KeyedDebouncedCommand
+    extends Command<KeyedDebounceIntent, ItemState, ItemEffect> {
   final List<String> executed = [];
 
   @override
@@ -244,19 +256,23 @@ class TestObserver extends CommanderObserver {
   void onControllerCreated(dynamic controller) => createdCount++;
 
   @override
-  void onBeforeExecute(dynamic controller, command, intent) => beforeExecuteCount++;
+  void onBeforeExecute(dynamic controller, command, intent) =>
+      beforeExecuteCount++;
 
   @override
-  void onAfterExecute(dynamic controller, command, intent) => afterExecuteCount++;
+  void onAfterExecute(dynamic controller, command, intent) =>
+      afterExecuteCount++;
 
   @override
-  void onStateChanged(dynamic controller, oldState, newState) => stateChangeCount++;
+  void onStateChanged(dynamic controller, oldState, newState) =>
+      stateChangeCount++;
 
   @override
   void onEffectEmitted(dynamic controller, effect) => effectCount++;
 
   @override
-  void onError(dynamic controller, command, intent, error, stackTrace) => errorCount++;
+  void onError(dynamic controller, command, intent, error, stackTrace) =>
+      errorCount++;
 
   @override
   void onControllerDisposed(dynamic controller) => disposedCount++;
@@ -293,7 +309,8 @@ void main() {
       controller.dispose();
     });
 
-    test('RESTART: cancels only the active execution with matching key', () async {
+    test('RESTART: cancels only the active execution with matching key',
+        () async {
       final restartCommand = KeyedRestartCommand();
       final controller = CommanderControllerImpl(const ItemState());
       controller.bindPublic(restartCommand);
@@ -324,7 +341,9 @@ void main() {
       controller.dispose();
     });
 
-    test('QUEUE: queues FIFO per key while processing different keys in parallel', () async {
+    test(
+        'QUEUE: queues FIFO per key while processing different keys in parallel',
+        () async {
       final queueCommand = KeyedQueueCommand();
       final controller = CommanderControllerImpl(const ItemState());
       controller.bindPublic(queueCommand);
@@ -361,7 +380,8 @@ void main() {
       controller.registerInlineCustom<KeyedDropIntent>(
         (scope, intent) async {
           started.add('${intent.keyId}:${intent.value}');
-          final completer = completers.putIfAbsent(intent.keyId, () => Completer<void>());
+          final completer =
+              completers.putIfAbsent(intent.keyId, () => Completer<void>());
           await completer.future;
         },
         policy: ExecutionPolicy.drop,
@@ -369,8 +389,10 @@ void main() {
       );
 
       final f1 = controller.dispatch(const KeyedDropIntent('K1', 'val1'));
-      final f2 = controller.dispatch(const KeyedDropIntent('K1', 'val2')); // dropped
-      final f3 = controller.dispatch(const KeyedDropIntent('K2', 'val1')); // distinct key, runs!
+      final f2 =
+          controller.dispatch(const KeyedDropIntent('K1', 'val2')); // dropped
+      final f3 = controller
+          .dispatch(const KeyedDropIntent('K2', 'val1')); // distinct key, runs!
 
       expect(started, equals(['K1:val1', 'K2:val1']));
 
@@ -383,7 +405,9 @@ void main() {
   });
 
   group('Lifecycle & Dispose Token Cleanup', () {
-    test('ExecutionPolicy.concurrent commands are cancelled upon controller.dispose()', () async {
+    test(
+        'ExecutionPolicy.concurrent commands are cancelled upon controller.dispose()',
+        () async {
       final command = LongRunningConcurrentCommand();
       final controller = CommanderControllerImpl(const ItemState());
       controller.bindPublic(command);
@@ -404,7 +428,9 @@ void main() {
   });
 
   group('CommanderController onError handling', () {
-    test('Overridden onError absorbs error and emits side effect without rethrowing', () async {
+    test(
+        'Overridden onError absorbs error and emits side effect without rethrowing',
+        () async {
       final controller = ErrorHandlingController();
       final emittedEffects = <ItemEffect>[];
       final sub = controller.effects.listen(emittedEffects.add);
@@ -418,9 +444,11 @@ void main() {
       // Yield for microtask delivery of broadcast stream
       await Future<void>.delayed(Duration.zero);
 
-      expect(controller.caughtErrors, contains('Exception: Failed: Something broke'));
+      expect(controller.caughtErrors,
+          contains('Exception: Failed: Something broke'));
       expect(emittedEffects.length, equals(1));
-      expect(emittedEffects.first.message, contains('Handled: Exception: Failed: Something broke'));
+      expect(emittedEffects.first.message,
+          contains('Handled: Exception: Failed: Something broke'));
 
       await sub.cancel();
       controller.dispose();
@@ -443,8 +471,10 @@ void main() {
   });
 
   group('CommanderScope.select aspectKey', () {
-    testWidgets('aspectKey provides stable aspect equality for context.select', (tester) async {
-      final controller = CommanderControllerImpl(const ItemState(items: {'key': 'initial'}));
+    testWidgets('aspectKey provides stable aspect equality for context.select',
+        (tester) async {
+      final controller =
+          CommanderControllerImpl(const ItemState(items: {'key': 'initial'}));
 
       int buildCount = 0;
 
@@ -454,7 +484,8 @@ void main() {
           child: Builder(
             builder: (context) {
               buildCount++;
-              final val = context.select<CommanderControllerImpl, ItemState, String>(
+              final val =
+                  context.select<CommanderControllerImpl, ItemState, String>(
                 (s) => s.items['key'] ?? '',
                 aspectKey: #itemKey,
               );
@@ -478,7 +509,8 @@ void main() {
       expect(buildCount, equals(1));
 
       // Now update the selected item
-      await controller.updatePublic((s) => s.copyWith(items: {'key': 'changed'}));
+      await controller
+          .updatePublic((s) => s.copyWith(items: {'key': 'changed'}));
       await tester.pump();
 
       // Should rebuild
@@ -490,7 +522,8 @@ void main() {
   });
 
   group('Command Debounce', () {
-    test('debounces rapid invocations and only executes the final intent', () async {
+    test('debounces rapid invocations and only executes the final intent',
+        () async {
       final searchCommand = DebouncedSearchCommand();
       final controller = CommanderControllerImpl(const ItemState());
       controller.bindPublic(searchCommand);
@@ -519,16 +552,21 @@ void main() {
       controller.bindPublic(keyedCommand);
 
       // Tab A
-      unawaited(controller.dispatch(const KeyedDebounceIntent('tabA', 'queryA1')));
-      unawaited(controller.dispatch(const KeyedDebounceIntent('tabA', 'queryA2')));
+      unawaited(
+          controller.dispatch(const KeyedDebounceIntent('tabA', 'queryA1')));
+      unawaited(
+          controller.dispatch(const KeyedDebounceIntent('tabA', 'queryA2')));
 
       // Tab B
-      unawaited(controller.dispatch(const KeyedDebounceIntent('tabB', 'queryB1')));
-      unawaited(controller.dispatch(const KeyedDebounceIntent('tabB', 'queryB2')));
+      unawaited(
+          controller.dispatch(const KeyedDebounceIntent('tabB', 'queryB1')));
+      unawaited(
+          controller.dispatch(const KeyedDebounceIntent('tabB', 'queryB2')));
 
       await Future<void>.delayed(const Duration(milliseconds: 70));
 
-      expect(keyedCommand.executed, containsAll(['tabA:queryA2', 'tabB:queryB2']));
+      expect(
+          keyedCommand.executed, containsAll(['tabA:queryA2', 'tabB:queryB2']));
       expect(keyedCommand.executed, isNot(contains('tabA:queryA1')));
       expect(keyedCommand.executed, isNot(contains('tabB:queryB1')));
 
@@ -537,7 +575,9 @@ void main() {
   });
 
   group('Global CommanderObserver', () {
-    test('observes lifecycle, executions, states, effects, errors, and disposal', () async {
+    test(
+        'observes lifecycle, executions, states, effects, errors, and disposal',
+        () async {
       final observer = TestObserver();
       Commander.observer = observer;
 
@@ -564,15 +604,18 @@ void main() {
 }
 
 // Helper test controller to expose protected members for testing
-class CommanderControllerImpl extends CommanderController<ItemState, ItemEffect> {
+class CommanderControllerImpl
+    extends CommanderController<ItemState, ItemEffect> {
   CommanderControllerImpl(super.initialState);
 
-  void bindPublic<I extends CommandIntent>(Command<I, ItemState, ItemEffect> command) {
+  void bindPublic<I extends CommandIntent>(
+      Command<I, ItemState, ItemEffect> command) {
     bind(command);
   }
 
   void registerInlineCustom<I extends CommandIntent>(
-    FutureOr<void> Function(CommandScope<ItemState, ItemEffect> scope, I intent) handler, {
+    FutureOr<void> Function(CommandScope<ItemState, ItemEffect> scope, I intent)
+        handler, {
     ExecutionPolicy policy = ExecutionPolicy.concurrent,
     Object? Function(I intent)? concurrencyKey,
   }) {
@@ -583,7 +626,8 @@ class CommanderControllerImpl extends CommanderController<ItemState, ItemEffect>
     return _handleUpdateStatePublic(reducer);
   }
 
-  Future<void> _handleUpdateStatePublic(ItemState Function(ItemState current) reducer) async {
+  Future<void> _handleUpdateStatePublic(
+      ItemState Function(ItemState current) reducer) async {
     on<InternalUpdateIntent>((scope, intent) {
       scope.updateState(reducer);
     });

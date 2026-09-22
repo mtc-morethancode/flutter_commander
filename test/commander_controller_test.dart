@@ -39,7 +39,9 @@ class ShowToastEffect extends CounterEffect {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is ShowToastEffect && runtimeType == other.runtimeType && message == other.message;
+      other is ShowToastEffect &&
+          runtimeType == other.runtimeType &&
+          message == other.message;
 
   @override
   int get hashCode => message.hashCode;
@@ -66,7 +68,8 @@ class FailIntent extends CommandIntent {
   const FailIntent();
 }
 
-class IncrementCommand extends Command<IncrementIntent, CounterState, CounterEffect> {
+class IncrementCommand
+    extends Command<IncrementIntent, CounterState, CounterEffect> {
   @override
   Future<void> execute(
     CommandScope<CounterState, CounterEffect> scope,
@@ -104,12 +107,14 @@ class MockInterceptor extends CommandInterceptor {
   final List<String> events = [];
 
   @override
-  void onBeforeExecute(Command<dynamic, dynamic, dynamic> command, CommandIntent intent) {
+  void onBeforeExecute(
+      Command<dynamic, dynamic, dynamic> command, CommandIntent intent) {
     events.add('before_${intent.runtimeType}');
   }
 
   @override
-  void onAfterExecute(Command<dynamic, dynamic, dynamic> command, CommandIntent intent) {
+  void onAfterExecute(
+      Command<dynamic, dynamic, dynamic> command, CommandIntent intent) {
     events.add('after_${intent.runtimeType}');
   }
 
@@ -154,7 +159,8 @@ void main() {
       expect(controller.state.label, equals('initial'));
     });
 
-    test('dispatching registered command updates state and emits effects', () async {
+    test('dispatching registered command updates state and emits effects',
+        () async {
       final effects = <CounterEffect>[];
       final sub = controller.effects.listen(effects.add);
 
@@ -170,12 +176,14 @@ void main() {
       await sub.cancel();
     });
 
-    test('inline on<I> handler mutates state without separate command class', () async {
+    test('inline on<I> handler mutates state without separate command class',
+        () async {
       await controller.dispatch(const SetLabelIntent('updated_label'));
       expect(controller.state.label, equals('updated_label'));
     });
 
-    test('dispatching unregistered intent throws UnregisteredIntentException', () async {
+    test('dispatching unregistered intent throws UnregisteredIntentException',
+        () async {
       expect(
         () => controller.dispatch(const UnhandledIntent()),
         throwsA(isA<UnregisteredIntentException>()),
@@ -194,12 +202,14 @@ void main() {
     test('interceptors receive complete lifecycle events', () async {
       await controller.dispatch(const IncrementIntent(1));
 
-      expect(interceptor.events, containsAllInOrder([
-        'before_IncrementIntent',
-        'state_CounterState',
-        'effect_ShowToastEffect',
-        'after_IncrementIntent',
-      ]));
+      expect(
+          interceptor.events,
+          containsAllInOrder([
+            'before_IncrementIntent',
+            'state_CounterState',
+            'effect_ShowToastEffect',
+            'after_IncrementIntent',
+          ]));
     });
 
     test('failing command triggers interceptor onError and rethrows', () async {
@@ -211,7 +221,8 @@ void main() {
       expect(interceptor.events, contains('error_FailIntent'));
     });
 
-    test('LoggingCommandInterceptor produces structured output format', () async {
+    test('LoggingCommandInterceptor produces structured output format',
+        () async {
       final logs = <String>[];
       final logger = LoggingCommandInterceptor(printFn: logs.add);
       controller.addInterceptor(logger);
@@ -219,15 +230,18 @@ void main() {
       await controller.dispatch(const IncrementIntent(2));
 
       expect(
-        logs.any((msg) => msg.contains('[flutter_commander] [Intent] IncrementIntent -> [Command] IncrementCommand')),
+        logs.any((msg) => msg.contains(
+            '[flutter_commander] [Intent] IncrementIntent -> [Command] IncrementCommand')),
         isTrue,
       );
       expect(
-        logs.any((msg) => msg.contains('[flutter_commander] [State] CounterState(value: 2, label: initial)')),
+        logs.any((msg) => msg.contains(
+            '[flutter_commander] [State] CounterState(value: 2, label: initial)')),
         isTrue,
       );
       expect(
-        logs.any((msg) => msg.contains('[flutter_commander] [Effect] ShowToastEffect(message: Incremented by 2)')),
+        logs.any((msg) => msg.contains(
+            '[flutter_commander] [Effect] ShowToastEffect(message: Incremented by 2)')),
         isTrue,
       );
     });
@@ -237,7 +251,9 @@ void main() {
       expect(controller.isDisposed, isTrue);
     });
 
-    test('CommandRegistry caches polymorphic resolution for O(1) subsequent lookups', () {
+    test(
+        'CommandRegistry caches polymorphic resolution for O(1) subsequent lookups',
+        () {
       final registry = CommandRegistry<CounterState, CounterEffect>();
       final cmd = IncrementCommand();
       registry.register<IncrementIntent>(cmd);

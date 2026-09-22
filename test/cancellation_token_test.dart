@@ -9,7 +9,8 @@ void main() {
       expect(() => token.throwIfCancelled(), returnsNormally);
     });
 
-    test('cancel() sets isCancelled to true and throws CancellationException', () {
+    test('cancel() sets isCancelled to true and throws CancellationException',
+        () {
       final token = CancellationToken();
       token.cancel();
 
@@ -58,7 +59,8 @@ void main() {
       expect(count, equals(1));
     });
 
-    test('listener errors do not prevent remaining listeners from executing', () {
+    test('listener errors do not prevent remaining listeners from executing',
+        () {
       final token = CancellationToken();
       var calledSecond = false;
 
