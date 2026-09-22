@@ -79,8 +79,10 @@ class TestCommandScope<S, E> implements CommandScope<S, E> {
   }
 
   /// Checks if any recorded state matches [predicate].
-  bool hasState(bool Function(S state) predicate) => _recordedStates.any(predicate);
+  bool hasState(bool Function(S state) predicate) =>
+      _recordedStates.any(predicate);
 
   /// Checks if any emitted side effect matches [predicate].
-  bool hasEffect(bool Function(E effect) predicate) => _recordedEffects.any(predicate);
+  bool hasEffect(bool Function(E effect) predicate) =>
+      _recordedEffects.any(predicate);
 }

@@ -46,7 +46,8 @@ class CommanderBuilder<C extends CommanderController<S, dynamic>, S, R>
   });
 
   @override
-  State<CommanderBuilder<C, S, R>> createState() => _CommanderBuilderState<C, S, R>();
+  State<CommanderBuilder<C, S, R>> createState() =>
+      _CommanderBuilderState<C, S, R>();
 }
 
 class _CommanderBuilderState<C extends CommanderController<S, dynamic>, S, R>
@@ -73,7 +74,8 @@ class _CommanderBuilderState<C extends CommanderController<S, dynamic>, S, R>
   }
 
   void _subscribe() {
-    final controller = widget.controller ?? CommanderScope.of<C>(context, listen: false);
+    final controller =
+        widget.controller ?? CommanderScope.of<C>(context, listen: false);
     if (_controller == controller) return;
 
     _controller?.removeListener(_onStateChanged);

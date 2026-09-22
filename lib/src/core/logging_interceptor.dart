@@ -42,7 +42,8 @@ class LoggingCommandInterceptor extends CommandInterceptor {
   }
 
   @override
-  void onBeforeExecute(Command<dynamic, dynamic, dynamic> command, CommandIntent intent) {
+  void onBeforeExecute(
+      Command<dynamic, dynamic, dynamic> command, CommandIntent intent) {
     final policyName = command.policy.name.toUpperCase();
     _log(
       '[flutter_commander] [Intent] ${intent.runtimeType} -> [Command] ${command.runtimeType} (Policy: $policyName)',

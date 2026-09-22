@@ -25,7 +25,8 @@ class CommandRegistry<S, E> {
     Object? Function(I intent)? concurrencyKey,
     Duration? debounce,
   }) {
-    final inlineCommand = _InlineCommand<I, S, E>(handler, policy, concurrencyKey, debounce);
+    final inlineCommand =
+        _InlineCommand<I, S, E>(handler, policy, concurrencyKey, debounce);
     register<I>(inlineCommand);
   }
 
@@ -77,7 +78,8 @@ class _InlineCommand<I extends CommandIntent, S, E> extends Command<I, S, E> {
   final Object? Function(I intent)? _concurrencyKey;
   final Duration? _debounce;
 
-  _InlineCommand(this._handler, this._policy, [this._concurrencyKey, this._debounce]);
+  _InlineCommand(this._handler, this._policy,
+      [this._concurrencyKey, this._debounce]);
 
   @override
   ExecutionPolicy get policy => _policy;

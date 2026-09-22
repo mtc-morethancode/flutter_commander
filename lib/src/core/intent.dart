@@ -18,4 +18,3 @@ abstract class CommandIntent {
   /// Const constructor for intent subclasses.
   const CommandIntent();
 }
-

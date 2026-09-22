@@ -59,4 +59,3 @@ abstract class Command<I extends CommandIntent, S, E> {
   /// Executes the command logic with the provided [scope] and triggering [intent].
   Future<void> execute(CommandScope<S, E> scope, I intent);
 }
-

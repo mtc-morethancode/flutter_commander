@@ -42,11 +42,14 @@ class UnregisteredIntentException implements Exception {
 ///   }
 /// }
 /// ```
-abstract class CommanderController<S, E> with ChangeNotifier implements ValueListenable<S> {
+abstract class CommanderController<S, E>
+    with ChangeNotifier
+    implements ValueListenable<S> {
   S _state;
   bool _isDisposed = false;
 
-  final StreamController<E> _effectsController = StreamController<E>.broadcast();
+  final StreamController<E> _effectsController =
+      StreamController<E>.broadcast();
   final List<CommandInterceptor> _interceptors = [];
   late final CommandRegistry<S, E> _registry;
   late final CommandRunner<S, E> _runner;

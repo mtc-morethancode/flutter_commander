@@ -6,7 +6,8 @@ import '../controller/commander_controller.dart';
 ///
 /// Supports automatic disposal, lazy/eager creation, and fine-grained selector
 /// subscriptions via Flutter's [InheritedModel].
-class CommanderScope<C extends CommanderController<dynamic, dynamic>> extends StatefulWidget {
+class CommanderScope<C extends CommanderController<dynamic, dynamic>>
+    extends StatefulWidget {
   /// Factory to instantiate the controller.
   final C Function(BuildContext context)? create;
 
@@ -46,7 +47,8 @@ class CommanderScope<C extends CommanderController<dynamic, dynamic>> extends St
     bool listen = false,
   }) {
     if (listen) {
-      final model = InheritedModel.inheritFrom<_CommanderInheritedModel<C>>(context);
+      final model =
+          InheritedModel.inheritFrom<_CommanderInheritedModel<C>>(context);
       if (model == null) {
         throw FlutterError(
           'CommanderScope.of<$C>(listen: true) could not find a matching CommanderScope<$C>.\n'
@@ -55,8 +57,8 @@ class CommanderScope<C extends CommanderController<dynamic, dynamic>> extends St
       }
       return model.controller;
     } else {
-      final element =
-          context.getElementForInheritedWidgetOfExactType<_CommanderInheritedModel<C>>();
+      final element = context.getElementForInheritedWidgetOfExactType<
+          _CommanderInheritedModel<C>>();
       final widget = element?.widget as _CommanderInheritedModel<C>?;
       if (widget == null) {
         throw FlutterError(
@@ -84,12 +86,14 @@ class CommanderScope<C extends CommanderController<dynamic, dynamic>> extends St
     Object? aspectKey,
   }) {
     // 1. Obtain controller without registering a full rebuild dependency
-    final controller = of<C>(context, listen: false) as CommanderController<S, dynamic>;
+    final controller =
+        of<C>(context, listen: false) as CommanderController<S, dynamic>;
     final currentValue = selector(controller.state);
 
     // 2. Register fine-grained aspect dependency
     final aspect = _SelectorAspect<S, R>(selector, aspectKey);
-    InheritedModel.inheritFrom<_CommanderInheritedModel<C>>(context, aspect: aspect);
+    InheritedModel.inheritFrom<_CommanderInheritedModel<C>>(context,
+        aspect: aspect);
 
     return currentValue;
   }
@@ -211,5 +215,6 @@ class _SelectorAspect<S, R> implements _Aspect {
   }
 
   @override
-  int get hashCode => aspectKey != null ? aspectKey.hashCode : selector.hashCode;
+  int get hashCode =>
+      aspectKey != null ? aspectKey.hashCode : selector.hashCode;
 }

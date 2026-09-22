@@ -102,7 +102,8 @@ class CommandRunner<S, E> {
     return completer.future;
   }
 
-  Future<void> _dispatchToPolicy(Command<dynamic, S, E> command, CommandIntent intent) {
+  Future<void> _dispatchToPolicy(
+      Command<dynamic, S, E> command, CommandIntent intent) {
     switch (command.policy) {
       case ExecutionPolicy.drop:
         return _runDrop(command, intent);
@@ -115,7 +116,8 @@ class CommandRunner<S, E> {
     }
   }
 
-  Object? _getConcurrencyKey(Command<dynamic, S, E> command, CommandIntent intent) {
+  Object? _getConcurrencyKey(
+      Command<dynamic, S, E> command, CommandIntent intent) {
     try {
       return (command as dynamic).concurrencyKey(intent);
     } catch (_) {
@@ -123,7 +125,8 @@ class CommandRunner<S, E> {
     }
   }
 
-  Future<void> _runDrop(Command<dynamic, S, E> command, CommandIntent intent) async {
+  Future<void> _runDrop(
+      Command<dynamic, S, E> command, CommandIntent intent) async {
     final execKey = _ExecutionKey(command, _getConcurrencyKey(command, intent));
     final active = _activeExecutions[execKey];
     if (active != null) {
@@ -147,7 +150,8 @@ class CommandRunner<S, E> {
     }
   }
 
-  Future<void> _runRestart(Command<dynamic, S, E> command, CommandIntent intent) async {
+  Future<void> _runRestart(
+      Command<dynamic, S, E> command, CommandIntent intent) async {
     final execKey = _ExecutionKey(command, _getConcurrencyKey(command, intent));
 
     // 1. Cancel previous running token for this key
@@ -175,7 +179,8 @@ class CommandRunner<S, E> {
 
   Future<void> _runQueue(Command<dynamic, S, E> command, CommandIntent intent) {
     final execKey = _ExecutionKey(command, _getConcurrencyKey(command, intent));
-    final queue = _queues.putIfAbsent(execKey, () => Queue<_QueuedExecution<S, E>>());
+    final queue =
+        _queues.putIfAbsent(execKey, () => Queue<_QueuedExecution<S, E>>());
     final completer = Completer<void>();
     final token = CancellationToken();
 
@@ -226,7 +231,8 @@ class CommandRunner<S, E> {
     }
   }
 
-  Future<void> _runConcurrent(Command<dynamic, S, E> command, CommandIntent intent) async {
+  Future<void> _runConcurrent(
+      Command<dynamic, S, E> command, CommandIntent intent) async {
     final token = CancellationToken();
     await _executeCommand(command, intent, token);
   }
@@ -256,7 +262,8 @@ class CommandRunner<S, E> {
     } on CancellationException {
       // Operation was cancelled collaboratively; expected flow for restart/cancellation.
     } catch (error, stackTrace) {
-      Commander.observer?.onError(_controller, command, intent, error, stackTrace);
+      Commander.observer
+          ?.onError(_controller, command, intent, error, stackTrace);
       for (final interceptor in _interceptors) {
         try {
           interceptor.onError(command, intent, error, stackTrace);
