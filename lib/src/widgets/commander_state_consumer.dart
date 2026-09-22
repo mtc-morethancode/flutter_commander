@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 
-import '../controller/commander_controller.dart';
+import '../controller/commander.dart';
 import 'commander_listener.dart';
 import 'commander_state_builder.dart';
 
@@ -11,14 +11,14 @@ import 'commander_state_builder.dart';
 ///
 /// Example:
 /// ```dart
-/// CommanderStateConsumer<OrderController, OrderState, OrderEffect>(
+/// CommanderStateConsumer<OrderCommander, OrderState, OrderEffect>(
 ///   onEffect: (context, effect) { ... },
 ///   builder: (context, state) => Text(state.status),
 /// )
 /// ```
-class CommanderStateConsumer<C extends CommanderController<S, E>, S, E>
+class CommanderStateConsumer<C extends Commander<S, E>, S, E>
     extends StatelessWidget {
-  /// Optional controller instance. If omitted, resolved from the nearest [CommanderScope].
+  /// Optional commander instance. If omitted, resolved from the nearest [CommanderScope].
   final C? controller;
 
   /// Callback executed when an effect is emitted.

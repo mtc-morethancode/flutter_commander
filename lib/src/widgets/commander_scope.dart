@@ -1,27 +1,27 @@
 import 'package:flutter/widgets.dart';
 
-import '../controller/commander_controller.dart';
+import '../controller/commander.dart';
 
-/// Injects and manages the lifecycle of a [CommanderController] in the widget tree.
+/// Injects and manages the lifecycle of a [Commander] in the widget tree.
 ///
 /// Supports automatic disposal, lazy/eager creation, and fine-grained selector
 /// subscriptions via Flutter's [InheritedModel].
-class CommanderScope<C extends CommanderController<dynamic, dynamic>>
+class CommanderScope<C extends Commander<dynamic, dynamic>>
     extends StatefulWidget {
-  /// Factory to instantiate the controller.
+  /// Factory to instantiate the commander.
   final C Function(BuildContext context)? create;
 
-  /// Existing controller instance (will not be disposed automatically).
+  /// Existing commander instance (will not be disposed automatically).
   final C? value;
 
   /// Child widget subtree.
   final Widget child;
 
-  /// Whether to automatically call [CommanderController.dispose] when this scope
+  /// Whether to automatically call [Commander.dispose] when this scope
   /// is unmounted. Defaults to `true` when using [CommanderScope.new] with `create`.
   final bool autoDispose;
 
-  /// Standard constructor creating and owning a [CommanderController].
+  /// Standard constructor creating and owning a [Commander].
   const CommanderScope({
     super.key,
     required C Function(BuildContext context) this.create,
@@ -29,8 +29,8 @@ class CommanderScope<C extends CommanderController<dynamic, dynamic>>
     this.autoDispose = true,
   }) : value = null;
 
-  /// Constructor supplying an existing [CommanderController] instance.
-  /// [autoDispose] defaults to `false` to avoid disposing shared controllers.
+  /// Constructor supplying an existing [Commander] instance.
+  /// [autoDispose] defaults to `false` to avoid disposing shared commanders.
   const CommanderScope.value({
     super.key,
     required C this.value,
@@ -38,11 +38,11 @@ class CommanderScope<C extends CommanderController<dynamic, dynamic>>
     this.autoDispose = false,
   }) : create = null;
 
-  /// Retrieves the nearest [CommanderController] of type [C] from the widget tree.
+  /// Retrieves the nearest [Commander] of type [C] from the widget tree.
   ///
   /// Set [listen] to `true` if the calling widget should rebuild whenever the
-  /// controller's state updates. Defaults to `false`.
-  static C of<C extends CommanderController<dynamic, dynamic>>(
+  /// commander's state updates. Defaults to `false`.
+  static C of<C extends Commander<dynamic, dynamic>>(
     BuildContext context, {
     bool listen = false,
   }) {
@@ -70,7 +70,7 @@ class CommanderScope<C extends CommanderController<dynamic, dynamic>>
     }
   }
 
-  /// Subscribes to a specific slice [R] of state [S] from controller [C].
+  /// Subscribes to a specific slice [R] of state [S] from commander [C].
   ///
   /// The calling widget will only rebuild when the value returned by [selector]
   /// changes (using equality `!=`).
@@ -80,14 +80,13 @@ class CommanderScope<C extends CommanderController<dynamic, dynamic>>
   ///
   /// Recommendation: For isolated UI subtrees, consider using [CommanderSelector]
   /// which connects via direct local listeners without InheritedModel aspect registration.
-  static R select<C extends CommanderController<S, dynamic>, S, R>(
+  static R select<C extends Commander<S, dynamic>, S, R>(
     BuildContext context,
     R Function(S state) selector, {
     Object? aspectKey,
   }) {
-    // 1. Obtain controller without registering a full rebuild dependency
-    final controller =
-        of<C>(context, listen: false) as CommanderController<S, dynamic>;
+    // 1. Obtain commander without registering a full rebuild dependency
+    final controller = of<C>(context, listen: false) as Commander<S, dynamic>;
     final currentValue = selector(controller.state);
 
     // 2. Register fine-grained aspect dependency
@@ -102,7 +101,7 @@ class CommanderScope<C extends CommanderController<dynamic, dynamic>>
   State<CommanderScope<C>> createState() => _CommanderScopeState<C>();
 }
 
-class _CommanderScopeState<C extends CommanderController<dynamic, dynamic>>
+class _CommanderScopeState<C extends Commander<dynamic, dynamic>>
     extends State<CommanderScope<C>> {
   late C _controller;
 
@@ -150,7 +149,7 @@ class _CommanderScopeState<C extends CommanderController<dynamic, dynamic>>
   }
 }
 
-class _CommanderInheritedModel<C extends CommanderController<dynamic, dynamic>>
+class _CommanderInheritedModel<C extends Commander<dynamic, dynamic>>
     extends InheritedModel<_Aspect> {
   final C controller;
   final dynamic state;

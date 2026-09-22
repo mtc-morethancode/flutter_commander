@@ -1,18 +1,19 @@
 import 'package:flutter/widgets.dart';
 
-import '../controller/commander_controller.dart';
+import '../controller/commander.dart';
 import 'commander_builder.dart';
 import 'commander_listener.dart';
 
 /// Combines [CommanderListener] and [CommanderBuilder] into a single unified widget.
 ///
 /// Handles both side-effect execution and reactive UI rebuilding with selectors.
-class CommanderConsumer<C extends CommanderController<S, E>, S, E, R>
+class CommanderConsumer<C extends Commander<S, E>, S, E, R>
     extends StatelessWidget {
-  /// Optional controller instance. If omitted, resolved from the nearest [CommanderScope].
+  /// Optional commander instance. If omitted, resolved from the nearest [CommanderScope].
   final C? controller;
 
   /// Selector mapping full state [S] to selected slice [R].
+  /// If null, [S] is cast to [R].
   final R Function(S state)? select;
 
   /// Callback executed when an effect is emitted.

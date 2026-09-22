@@ -1,15 +1,15 @@
 import 'package:flutter/widgets.dart';
 
-import '../controller/commander_controller.dart';
+import '../controller/commander.dart';
 import 'commander_scope.dart';
 
-/// Rebuilds widget subtrees reactively based on a [CommanderController]'s state.
+/// Rebuilds widget subtrees reactively based on a [Commander]'s state.
 ///
 /// Supports selector projections via [select] and conditional rebuild guards via [buildWhen].
 ///
 /// Example with selector:
 /// ```dart
-/// CommanderBuilder<CartController, CartState, int>(
+/// CommanderBuilder<CartCommander, CartState, int>(
 ///   select: (state) => state.itemCount,
 ///   builder: (context, count) => Text('Items: $count'),
 /// )
@@ -17,13 +17,13 @@ import 'commander_scope.dart';
 ///
 /// Example with full state:
 /// ```dart
-/// CommanderBuilder<CartController, CartState, CartState>(
+/// CommanderBuilder<CartCommander, CartState, CartState>(
 ///   builder: (context, state) => Text('Total: ${state.total}'),
 /// )
 /// ```
-class CommanderBuilder<C extends CommanderController<S, dynamic>, S, R>
+class CommanderBuilder<C extends Commander<S, dynamic>, S, R>
     extends StatefulWidget {
-  /// Optional controller instance. If omitted, resolved from the nearest [CommanderScope].
+  /// Optional commander instance. If omitted, resolved from the nearest [CommanderScope].
   final C? controller;
 
   /// Selector mapping full state [S] to selected slice [R].
@@ -50,7 +50,7 @@ class CommanderBuilder<C extends CommanderController<S, dynamic>, S, R>
       _CommanderBuilderState<C, S, R>();
 }
 
-class _CommanderBuilderState<C extends CommanderController<S, dynamic>, S, R>
+class _CommanderBuilderState<C extends Commander<S, dynamic>, S, R>
     extends State<CommanderBuilder<C, S, R>> {
   C? _controller;
   late R _currentValue;

@@ -1,22 +1,22 @@
 import 'package:flutter/widgets.dart';
 
-import '../controller/commander_controller.dart';
+import '../controller/commander.dart';
 import 'commander_builder.dart';
 
-/// Rebuilds widget subtrees reactively based on a [CommanderController]'s full state [S].
+/// Rebuilds widget subtrees reactively based on a [Commander]'s full state [S].
 ///
 /// A simplified alternative to [CommanderBuilder] that requires only 2 generic type parameters
 /// (`C` and `S`) instead of 3, avoiding the need to specify the state type twice.
 ///
 /// Example:
 /// ```dart
-/// CommanderStateBuilder<CartController, CartState>(
+/// CommanderStateBuilder<CartCommander, CartState>(
 ///   builder: (context, state) => Text('Items: ${state.count}'),
 /// )
 /// ```
-class CommanderStateBuilder<C extends CommanderController<S, dynamic>, S>
+class CommanderStateBuilder<C extends Commander<S, dynamic>, S>
     extends StatelessWidget {
-  /// Optional controller instance. If omitted, resolved from the nearest [CommanderScope].
+  /// Optional commander instance. If omitted, resolved from the nearest [CommanderScope].
   final C? controller;
 
   /// Widget builder function invoked with the full current [S] state.

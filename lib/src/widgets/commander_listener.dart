@@ -2,17 +2,17 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 
-import '../controller/commander_controller.dart';
+import '../controller/commander.dart';
 import 'commander_scope.dart';
 
-/// Listens exclusively to one-shot side effect emissions of type [E] from a [CommanderController]
+/// Listens exclusively to one-shot side effect emissions of type [E] from a [Commander]
 /// without rebuilding the widget tree.
 ///
 /// Ideal for navigation, showing SnackBar messages, alerts, and modal dialogs.
 ///
 /// Example:
 /// ```dart
-/// CommanderListener<OrderController, OrderEffect>(
+/// CommanderListener<OrderCommander, OrderEffect>(
 ///   onEffect: (context, effect) {
 ///     switch (effect) {
 ///       case NavigateToConfirmationEffect():
@@ -24,9 +24,9 @@ import 'commander_scope.dart';
 ///   child: const OrderFormView(),
 /// )
 /// ```
-class CommanderListener<C extends CommanderController<dynamic, E>, E>
+class CommanderListener<C extends Commander<dynamic, E>, E>
     extends StatefulWidget {
-  /// Optional controller instance. If omitted, resolved from the nearest [CommanderScope].
+  /// Optional commander instance. If omitted, resolved from the nearest [CommanderScope].
   final C? controller;
 
   /// Callback executed whenever an effect is emitted.
@@ -52,7 +52,7 @@ class CommanderListener<C extends CommanderController<dynamic, E>, E>
       _CommanderListenerState<C, E>();
 }
 
-class _CommanderListenerState<C extends CommanderController<dynamic, E>, E>
+class _CommanderListenerState<C extends Commander<dynamic, E>, E>
     extends State<CommanderListener<C, E>> {
   C? _controller;
   StreamSubscription<E>? _subscription;
