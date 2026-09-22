@@ -38,9 +38,9 @@ class ShowToastEffect extends CartEffect {
 // 2. Intent
 class AddItemIntent extends CommandIntent { const AddItemIntent(); }
 
-// 3. Controller with Inline DSL or Command
-class CartController extends CommanderController<CartState, CartEffect> {
-  CartController() : super(const CartState()) {
+// 3. Commander with Inline DSL or Command
+class CartCommander extends Commander<CartState, CartEffect> {
+  CartCommander() : super(const CartState()) {
     on<AddItemIntent>((scope, intent) {
       scope.updateState((s) => CartState(count: s.count + 1));
       scope.emitSideEffect(const ShowToastEffect('Item added to cart!'));
@@ -54,9 +54,9 @@ class QuickstartApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CommanderScope<CartController>(
-      create: (_) => CartController(),
-      child: CommanderListener<CartController, CartEffect>(
+    return CommanderScope<CartCommander>(
+      create: (_) => CartCommander(),
+      child: CommanderListener<CartCommander, CartEffect>(
         onEffect: (context, effect) {
           if (effect is ShowToastEffect) {
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(effect.message)));
@@ -64,14 +64,14 @@ class QuickstartApp extends StatelessWidget {
         },
         child: Scaffold(
           body: Center(
-            child: CommanderSelector<CartController, CartState, int>(
+            child: CommanderSelector<CartCommander, CartState, int>(
               select: (s) => s.count,
               builder: (context, count) => Text('Items: $count', style: const TextStyle(fontSize: 24)),
             ),
           ),
           floatingActionButton: Builder(
             builder: (context) => FloatingActionButton(
-              onPressed: () => context.dispatch<CartController>(const AddItemIntent()),
+              onPressed: () => context.dispatch<CartCommander>(const AddItemIntent()),
               child: const Icon(Icons.add),
             ),
           ),
@@ -285,13 +285,13 @@ class TrackAnalyticsCommand extends Command<TrackAnalyticsIntent, CartState, Car
 
 ---
 
-### 3. Orchestrating with the Controller (`CartController`)
+### 3. Orchestrating with the Commander (`CartCommander`)
 
-The controller binds formal commands via `bind()` and handles quick UI state mutations using the **Inline DSL** `on<I>()`:
+The commander binds formal commands via `bind()` and handles quick UI state mutations using the **Inline DSL** `on<I>()`:
 
 ```dart
-class CartController extends CommanderController<CartState, CartEffect> {
-  CartController({
+class CartCommander extends Commander<CartState, CartEffect> {
+  CartCommander({
     required PaymentService paymentService,
     required CatalogService catalogService,
     required AnalyticsService analyticsService,
@@ -318,6 +318,8 @@ class CartController extends CommanderController<CartState, CartEffect> {
   }
 }
 ```
+
+> **💡 Note on Naming:** Your state & use-case orchestrators extend `Commander<S, E>` (e.g. `CartCommander`, `ShopCommander`). For teams that prefer controller terminology, `typedef CommanderController<S, E> = Commander<S, E>;` is available out-of-the-box.
 
 ---
 
@@ -349,13 +351,13 @@ class CartPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CommanderScope<CartController>(
-      create: (context) => CartController(
+    return CommanderScope<CartCommander>(
+      create: (context) => CartCommander(
         paymentService: PaymentService(),
         catalogService: CatalogService(),
         analyticsService: AnalyticsService(),
       ),
-      child: CommanderListener<CartController, CartEffect>(
+      child: CommanderListener<CartCommander, CartEffect>(
         onEffect: (context, effect) {
           switch (effect) {
             case ShowToastEffect(:final message):
@@ -376,12 +378,12 @@ class CartPage extends StatelessWidget {
                 // Live search field with 300ms debounce
                 TextField(
                   decoration: const InputDecoration(labelText: 'Search products'),
-                  onChanged: (query) => context.dispatch<CartController>(SearchProductsIntent(query)),
+                  onChanged: (query) => context.dispatch<CartCommander>(SearchProductsIntent(query)),
                 ),
                 const SizedBox(height: 16),
                 // Rebuilds ONLY when search results update
                 Expanded(
-                  child: CommanderSelector<CartController, CartState, List<String>>(
+                  child: CommanderSelector<CartCommander, CartState, List<String>>(
                     select: (state) => state.searchResults,
                     builder: (context, results) {
                       return ListView.builder(
@@ -392,7 +394,7 @@ class CartPage extends StatelessWidget {
                             title: Text(item),
                             trailing: IconButton(
                               icon: const Icon(Icons.add_shopping_cart),
-                              onPressed: () => context.dispatch<CartController>(AddToCartIntent(item)),
+                              onPressed: () => context.dispatch<CartCommander>(AddToCartIntent(item)),
                             ),
                           );
                         },
@@ -401,13 +403,13 @@ class CartPage extends StatelessWidget {
                   ),
                 ),
                 // Checkout button with double-tap protection
-                CommanderSelector<CartController, CartState, bool>(
+                CommanderSelector<CartCommander, CartState, bool>(
                   select: (state) => state.isCheckingOut,
                   builder: (context, isCheckingOut) {
                     return ElevatedButton(
                       onPressed: isCheckingOut
                           ? null
-                          : () => context.dispatch<CartController>(const CheckoutIntent()),
+                          : () => context.dispatch<CartCommander>(const CheckoutIntent()),
                       child: isCheckingOut
                           ? const CircularProgressIndicator.adaptive()
                           : const Text('Complete Purchase'),
@@ -430,7 +432,7 @@ class CartBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Rebuilds ONLY when itemCount changes:
-    final count = context.select<CartController, CartState, int>((s) => s.itemCount);
+    final count = context.select<CartCommander, CartState, int>((s) => s.itemCount);
 
     return Badge(
       label: Text('$count'),
@@ -487,30 +489,30 @@ void main() {
 
 class AppStoreObserver extends CommanderObserver {
   @override
-  void onControllerCreated(CommanderController<dynamic, dynamic> controller) {
-    debugPrint('[Lifecycle] Created: ${controller.runtimeType}');
+  void onCommanderCreated(Commander<dynamic, dynamic> commander) {
+    debugPrint('[Lifecycle] Created: ${commander.runtimeType}');
   }
 
   @override
   void onStateChanged(
-    CommanderController<dynamic, dynamic>? controller,
+    Commander<dynamic, dynamic>? commander,
     dynamic oldState,
     dynamic newState,
   ) {
-    debugPrint('[State] ${controller.runtimeType} -> $newState');
+    debugPrint('[State] ${commander.runtimeType} -> $newState');
   }
 
   @override
   void onEffectEmitted(
-    CommanderController<dynamic, dynamic>? controller,
+    Commander<dynamic, dynamic>? commander,
     dynamic effect,
   ) {
-    debugPrint('[Effect] ${controller.runtimeType} -> $effect');
+    debugPrint('[Effect] ${commander.runtimeType} -> $effect');
   }
 
   @override
   void onError(
-    CommanderController<dynamic, dynamic>? controller,
+    Commander<dynamic, dynamic>? commander,
     Command<dynamic, dynamic, dynamic>? command,
     CommandIntent? intent,
     Object error,
