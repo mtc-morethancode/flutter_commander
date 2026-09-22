@@ -11,7 +11,8 @@ class FakeCatalogService implements CatalogService {
   @override
   Future<List<Product>> searchProducts(String query) async {
     return [
-      const Product(id: 'p1', title: 'MacBook Pro', price: 2000, category: 'Laptops'),
+      const Product(
+          id: 'p1', title: 'MacBook Pro', price: 2000, category: 'Laptops'),
     ];
   }
 
@@ -42,7 +43,8 @@ void main() {
 
     test('populates search results upon successful query', () async {
       final command = SearchProductsCommand(FakeCatalogService());
-      final testScope = TestCommandScope<ShopState, ShopEffect>(const ShopState());
+      final testScope =
+          TestCommandScope<ShopState, ShopEffect>(const ShopState());
 
       await command.execute(testScope, const SearchProductsIntent('Mac'));
 
@@ -50,12 +52,15 @@ void main() {
       expect(testScope.states[0].isSearching, isTrue);
       expect(testScope.states[1].isSearching, isFalse);
       expect(testScope.states[1].searchResults.length, equals(1));
-      expect(testScope.states[1].searchResults.first.title, equals('MacBook Pro'));
+      expect(
+          testScope.states[1].searchResults.first.title, equals('MacBook Pro'));
     });
 
-    test('cooperative cancellation prevents state mutation when cancelled', () async {
+    test('cooperative cancellation prevents state mutation when cancelled',
+        () async {
       final command = SearchProductsCommand(FakeCatalogService());
-      final testScope = TestCommandScope<ShopState, ShopEffect>(const ShopState());
+      final testScope =
+          TestCommandScope<ShopState, ShopEffect>(const ShopState());
 
       // Simulate mid-execution cancellation
       testScope.cancel();

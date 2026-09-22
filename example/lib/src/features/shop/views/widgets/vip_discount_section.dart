@@ -41,7 +41,8 @@ class VipDiscountSection extends StatelessWidget {
                 return Switch(
                   value: hasDiscount,
                   onChanged: (_) {
-                    context.dispatch<ShopController>(const ToggleVipDiscountIntent());
+                    context.dispatch<ShopController>(
+                        const ToggleVipDiscountIntent());
                     context.dispatch<ShopController>(
                       TrackAnalyticsIntent('vip_toggle:$hasDiscount'),
                     );

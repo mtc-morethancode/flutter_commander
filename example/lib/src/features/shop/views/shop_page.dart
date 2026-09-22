@@ -31,7 +31,8 @@ class ShopPage extends StatelessWidget {
             showDialog<void>(
               context: context,
               builder: (dialogCtx) => AlertDialog(
-                icon: const Icon(Icons.check_circle, color: Colors.green, size: 48),
+                icon: const Icon(Icons.check_circle,
+                    color: Colors.green, size: 48),
                 title: const Text('Order Confirmed!'),
                 content: Text(
                   'Order #${confirmation.orderId} was processed for '
@@ -54,7 +55,8 @@ class ShopPage extends StatelessWidget {
             Builder(
               builder: (context) {
                 // Sliced subscription via context.select: rebuilds ONLY when count changes
-                final cartCount = context.select<ShopController, ShopState, int>(
+                final cartCount =
+                    context.select<ShopController, ShopState, int>(
                   (s) => s.cartItemCount,
                 );
                 return Padding(

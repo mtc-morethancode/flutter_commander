@@ -30,7 +30,8 @@ class SearchSection extends StatelessWidget {
                   tooltip: 'Parallel Refresh (CONCURRENT)',
                   icon: const Icon(Icons.refresh),
                   onPressed: () {
-                    context.dispatch<ShopController>(const RefreshCatalogIntent());
+                    context
+                        .dispatch<ShopController>(const RefreshCatalogIntent());
                   },
                 ),
               ],
@@ -45,7 +46,8 @@ class SearchSection extends StatelessWidget {
               ),
               onChanged: (text) {
                 context.dispatch<ShopController>(SearchProductsIntent(text));
-                context.dispatch<ShopController>(TrackAnalyticsIntent('search:$text'));
+                context.dispatch<ShopController>(
+                    TrackAnalyticsIntent('search:$text'));
               },
             ),
             const SizedBox(height: 8),
@@ -74,12 +76,14 @@ class SearchSection extends StatelessWidget {
                 return Column(
                   children: results
                       .map((product) => ListTile(
-                            leading: const Icon(Icons.devices, color: Colors.indigo),
+                            leading:
+                                const Icon(Icons.devices, color: Colors.indigo),
                             title: Text(product.title),
                             subtitle: Text(product.category),
                             trailing: Text(
                               '\$${product.price.toStringAsFixed(0)}',
-                              style: const TextStyle(fontWeight: FontWeight.bold),
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold),
                             ),
                           ))
                       .toList(),

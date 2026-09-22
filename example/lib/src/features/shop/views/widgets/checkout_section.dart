@@ -29,8 +29,10 @@ class CheckoutSection extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             // Rebuilds only when checkout progress, items, or total changes
-            CommanderSelector<ShopController, ShopState, (bool, int, double, double)>(
-              select: (s) => (s.isCheckingOut, s.cartItemCount, s.subtotal, s.total),
+            CommanderSelector<ShopController, ShopState,
+                (bool, int, double, double)>(
+              select: (s) =>
+                  (s.isCheckingOut, s.cartItemCount, s.subtotal, s.total),
               builder: (context, slice) {
                 final (isCheckingOut, count, subtotal, total) = slice;
 
@@ -67,9 +69,11 @@ class CheckoutSection extends StatelessWidget {
                       onPressed: count == 0 || isCheckingOut
                           ? null
                           : () {
-                              context.dispatch<ShopController>(const CheckoutIntent());
                               context.dispatch<ShopController>(
-                                const TrackAnalyticsIntent('checkout_submitted'),
+                                  const CheckoutIntent());
+                              context.dispatch<ShopController>(
+                                const TrackAnalyticsIntent(
+                                    'checkout_submitted'),
                               );
                             },
                       icon: isCheckingOut
@@ -82,7 +86,9 @@ class CheckoutSection extends StatelessWidget {
                       label: Text(
                         isCheckingOut
                             ? 'Authorizing Payment...'
-                            : (count > 0 ? 'Pay \$${total.toStringAsFixed(2)}' : 'Cart Empty'),
+                            : (count > 0
+                                ? 'Pay \$${total.toStringAsFixed(2)}'
+                                : 'Cart Empty'),
                       ),
                     ),
                   ],

@@ -15,7 +15,8 @@ void main() {
     expect(find.text('flutter_commander Enterprise Store'), findsOneWidget);
     expect(find.text('Live Search (ExecutionPolicy.RESTART)'), findsOneWidget);
     expect(find.text('Checkout (ExecutionPolicy.DROP)'), findsOneWidget);
-    expect(find.text('FIFO Analytics Queue (ExecutionPolicy.QUEUE)'), findsOneWidget);
+    expect(find.text('FIFO Analytics Queue (ExecutionPolicy.QUEUE)'),
+        findsOneWidget);
 
     // Toggle VIP discount switch
     await tester.tap(find.byType(Switch));

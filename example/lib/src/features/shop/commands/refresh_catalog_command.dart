@@ -28,6 +28,7 @@ class RefreshCatalogCommand
           featuredProducts: featured,
           isRefreshing: false,
         ));
-    scope.emitSideEffect(const ShowSnackbarEffect('Catalog refreshed successfully!'));
+    scope.emitSideEffect(
+        const ShowSnackbarEffect('Catalog refreshed successfully!'));
   }
 }

@@ -37,9 +37,7 @@ class ShopController extends CommanderController<ShopState, ShopEffect> {
 
       scope.emitSideEffect(
         ShowSnackbarEffect(
-          updated
-              ? 'VIP 15% discount applied!'
-              : 'VIP discount removed.',
+          updated ? 'VIP 15% discount applied!' : 'VIP discount removed.',
         ),
       );
     });

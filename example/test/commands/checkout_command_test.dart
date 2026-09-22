@@ -25,7 +25,8 @@ void main() {
       expect(command.policy, equals(ExecutionPolicy.drop));
     });
 
-    test('updates state to loading, clears cart on success, and emits OrderConfirmedEffect',
+    test(
+        'updates state to loading, clears cart on success, and emits OrderConfirmedEffect',
         () async {
       final fakeService = FakePaymentService();
       final command = CheckoutCommand(fakeService);
