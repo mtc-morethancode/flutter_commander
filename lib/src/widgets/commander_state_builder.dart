@@ -19,7 +19,7 @@ class CommanderStateBuilder<C extends CommanderController<S, dynamic>, S>
   /// Optional controller instance. If omitted, resolved from the nearest [CommanderScope].
   final C? controller;
 
-  /// Widget builder function invoked with the full [state].
+  /// Widget builder function invoked with the full current [S] state.
   final Widget Function(BuildContext context, S state) builder;
 
   /// Optional condition to control whether [builder] should be called on state changes.

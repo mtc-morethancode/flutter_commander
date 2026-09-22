@@ -5,7 +5,7 @@ import 'package:flutter/widgets.dart';
 import '../controller/commander_controller.dart';
 import 'commander_scope.dart';
 
-/// Listens exclusively to one-shot [SideEffect] emissions from a [CommanderController]
+/// Listens exclusively to one-shot side effect emissions of type [E] from a [CommanderController]
 /// without rebuilding the widget tree.
 ///
 /// Ideal for navigation, showing SnackBar messages, alerts, and modal dialogs.
@@ -48,7 +48,8 @@ class CommanderListener<C extends CommanderController<dynamic, E>, E>
   });
 
   @override
-  State<CommanderListener<C, E>> createState() => _CommanderListenerState<C, E>();
+  State<CommanderListener<C, E>> createState() =>
+      _CommanderListenerState<C, E>();
 }
 
 class _CommanderListenerState<C extends CommanderController<dynamic, E>, E>
@@ -71,7 +72,8 @@ class _CommanderListenerState<C extends CommanderController<dynamic, E>, E>
   }
 
   void _subscribe() {
-    final controller = widget.controller ?? CommanderScope.of<C>(context, listen: false);
+    final controller =
+        widget.controller ?? CommanderScope.of<C>(context, listen: false);
     if (_controller == controller) return;
 
     _subscription?.cancel();

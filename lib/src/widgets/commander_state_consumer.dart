@@ -27,7 +27,7 @@ class CommanderStateConsumer<C extends CommanderController<S, E>, S, E>
   /// Optional filter for side-effect execution.
   final bool Function(E effect)? listenWhen;
 
-  /// Widget builder function invoked with the full [state].
+  /// Widget builder function invoked with the full current [S] state.
   final Widget Function(BuildContext context, S state) builder;
 
   /// Optional condition to control rebuilding.

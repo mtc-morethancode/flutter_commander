@@ -16,6 +16,9 @@ class CancellationException implements Exception {
 /// Designed to support cooperative cancellation patterns in commands, such as
 /// when using [ExecutionPolicy.restart] or manual task abortion.
 class CancellationToken {
+  /// Creates a new, uncancelled [CancellationToken].
+  CancellationToken();
+
   bool _isCancelled = false;
   final List<void Function()> _listeners = [];
 
