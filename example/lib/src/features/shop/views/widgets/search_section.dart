@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_commander/flutter_commander.dart';
 
 import '../../../../core/models/product.dart';
-import '../../controller/shop_controller.dart';
+import '../../controller/shop_commander.dart';
 import '../../controller/shop_state.dart';
 import '../../intents/shop_intents.dart';
 
@@ -31,7 +31,7 @@ class SearchSection extends StatelessWidget {
                   icon: const Icon(Icons.refresh),
                   onPressed: () {
                     context
-                        .dispatch<ShopController>(const RefreshCatalogIntent());
+                        .dispatch<ShopCommander>(const RefreshCatalogIntent());
                   },
                 ),
               ],
@@ -45,14 +45,14 @@ class SearchSection extends StatelessWidget {
                 isDense: true,
               ),
               onChanged: (text) {
-                context.dispatch<ShopController>(SearchProductsIntent(text));
-                context.dispatch<ShopController>(
+                context.dispatch<ShopCommander>(SearchProductsIntent(text));
+                context.dispatch<ShopCommander>(
                     TrackAnalyticsIntent('search:$text'));
               },
             ),
             const SizedBox(height: 8),
             // Rebuilds only when searching flag or search results change
-            CommanderSelector<ShopController, ShopState, (bool, List<Product>)>(
+            CommanderSelector<ShopCommander, ShopState, (bool, List<Product>)>(
               select: (s) => (s.isSearching, s.searchResults),
               builder: (context, slice) {
                 final (isSearching, results) = slice;

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_commander/flutter_commander.dart';
 
-import '../../controller/shop_controller.dart';
+import '../../controller/shop_commander.dart';
 import '../../controller/shop_state.dart';
 import '../../intents/shop_intents.dart';
 
@@ -35,15 +35,15 @@ class VipDiscountSection extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            CommanderSelector<ShopController, ShopState, bool>(
+            CommanderSelector<ShopCommander, ShopState, bool>(
               select: (s) => s.hasVipDiscount,
               builder: (context, hasDiscount) {
                 return Switch(
                   value: hasDiscount,
                   onChanged: (_) {
-                    context.dispatch<ShopController>(
+                    context.dispatch<ShopCommander>(
                         const ToggleVipDiscountIntent());
-                    context.dispatch<ShopController>(
+                    context.dispatch<ShopCommander>(
                       TrackAnalyticsIntent('vip_toggle:$hasDiscount'),
                     );
                   },

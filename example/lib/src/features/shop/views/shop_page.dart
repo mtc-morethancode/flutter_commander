@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_commander/flutter_commander.dart';
 
-import '../controller/shop_controller.dart';
+import '../controller/shop_commander.dart';
 import '../controller/shop_effect.dart';
 import '../controller/shop_state.dart';
 import 'widgets/analytics_section.dart';
@@ -15,7 +15,7 @@ class ShopPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CommanderListener<ShopController, ShopEffect>(
+    return CommanderListener<ShopCommander, ShopEffect>(
       onEffect: (context, effect) {
         switch (effect) {
           case ShowSnackbarEffect(:final message):
@@ -55,8 +55,7 @@ class ShopPage extends StatelessWidget {
             Builder(
               builder: (context) {
                 // Sliced subscription via context.select: rebuilds ONLY when count changes
-                final cartCount =
-                    context.select<ShopController, ShopState, int>(
+                final cartCount = context.select<ShopCommander, ShopState, int>(
                   (s) => s.cartItemCount,
                 );
                 return Padding(

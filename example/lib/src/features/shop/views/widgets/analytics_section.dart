@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_commander/flutter_commander.dart';
 
-import '../../controller/shop_controller.dart';
+import '../../controller/shop_commander.dart';
 import '../../controller/shop_state.dart';
 
 /// Analytics stream section showcasing [ExecutionPolicy.queue].
@@ -28,7 +28,7 @@ class AnalyticsSection extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             // Rebuilds only when the analytics log updates
-            CommanderBuilder<ShopController, ShopState, List<String>>(
+            CommanderBuilder<ShopCommander, ShopState, List<String>>(
               select: (s) => s.analyticsLog,
               builder: (context, log) {
                 if (log.isEmpty) {

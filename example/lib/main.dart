@@ -4,7 +4,7 @@ import 'package:flutter_commander/flutter_commander.dart';
 import 'src/core/services/analytics_service.dart';
 import 'src/core/services/catalog_service.dart';
 import 'src/core/services/payment_service.dart';
-import 'src/features/shop/controller/shop_controller.dart';
+import 'src/features/shop/controller/shop_commander.dart';
 import 'src/features/shop/views/shop_page.dart';
 
 void main() {
@@ -29,8 +29,8 @@ class CommanderEnterpriseApp extends StatelessWidget {
         colorSchemeSeed: Colors.indigo,
         useMaterial3: true,
       ),
-      home: CommanderScope<ShopController>(
-        create: (context) => ShopController(
+      home: CommanderScope<ShopCommander>(
+        create: (context) => ShopCommander(
           catalogService: catalogService,
           paymentService: paymentService,
           analyticsService: analyticsService,
