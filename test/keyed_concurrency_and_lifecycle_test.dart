@@ -600,7 +600,37 @@ void main() {
 
       Commander.observer = null;
     });
+
+    test('direct onCommanderCreated and onCommanderDisposed hooks work', () {
+      final directObserver = DirectCommanderObserver();
+      Commander.observer = directObserver;
+
+      expect(directObserver.created, isFalse);
+      final commander = CommanderControllerImpl(const ItemState());
+      expect(directObserver.created, isTrue);
+
+      expect(directObserver.disposed, isFalse);
+      commander.dispose();
+      expect(directObserver.disposed, isTrue);
+
+      Commander.observer = null;
+    });
   });
+}
+
+class DirectCommanderObserver extends CommanderObserver {
+  bool created = false;
+  bool disposed = false;
+
+  @override
+  void onCommanderCreated(Commander<dynamic, dynamic> commander) {
+    created = true;
+  }
+
+  @override
+  void onCommanderDisposed(Commander<dynamic, dynamic> commander) {
+    disposed = true;
+  }
 }
 
 // Helper test controller to expose protected members for testing
