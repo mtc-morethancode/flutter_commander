@@ -5,6 +5,13 @@ homepage: https://github.com/flutter-commander/flutter_commander
 repository: https://github.com/flutter-commander/flutter_commander
 issue_tracker: https://github.com/flutter-commander/flutter_commander/issues
 
+topics:
+  - state-management
+  - mvi
+  - architecture
+  - concurrency
+  - command-pattern
+
 environment:
   sdk: '>=3.0.0 <4.0.0'
   flutter: '>=3.10.0'
