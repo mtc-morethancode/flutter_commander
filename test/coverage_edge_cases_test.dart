@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_commander/flutter_commander.dart';
-import 'package:flutter_commander/src/controller/command_registry.dart';
+import 'package:flutter_commander/src/commander/command_registry.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 // Test domain
@@ -49,8 +49,8 @@ class QueuedSlowCommand
   }
 }
 
-class DummyController extends CommanderController<DummyState, DummyEffect> {
-  DummyController() : super(const DummyState(0)) {
+class DummyCommander extends Commander<DummyState, DummyEffect> {
+  DummyCommander() : super(const DummyState(0)) {
     bind(BaseIntentCommand());
     bind(QueuedSlowCommand());
   }
@@ -93,20 +93,20 @@ void main() {
     });
 
     test('removeInterceptor removes registered interceptor', () async {
-      final controller = DummyController();
+      final commander = DummyCommander();
       var logged = 0;
       final logger = LoggingCommandInterceptor(printFn: (_) => logged++);
 
-      controller.addInterceptor(logger);
-      await controller.dispatch(const DerivedIntent());
+      commander.addInterceptor(logger);
+      await commander.dispatch(const DerivedIntent());
       expect(logged, greaterThan(0));
 
       final prevLogged = logged;
-      controller.removeInterceptor(logger);
-      await controller.dispatch(const DerivedIntent());
+      commander.removeInterceptor(logger);
+      await commander.dispatch(const DerivedIntent());
       expect(logged, equals(prevLogged));
 
-      controller.dispose();
+      commander.dispose();
     });
 
     test('LoggingCommandInterceptor default print and error logging', () {
@@ -130,27 +130,27 @@ void main() {
 
     test('CommandRegistry polymorphic subtype resolution and contains check',
         () async {
-      final controller = DummyController();
+      final commander = DummyCommander();
       // BaseIntentCommand is registered for BaseIntent, DerivedIntent extends BaseIntent
-      await controller.dispatch(const DerivedIntent());
-      expect(controller.state.count, equals(1));
-      controller.dispose();
+      await commander.dispatch(const DerivedIntent());
+      expect(commander.state.count, equals(1));
+      commander.dispose();
     });
 
-    test('Queue cancellation upon controller disposal when items are pending',
+    test('Queue cancellation upon commander disposal when items are pending',
         () async {
-      final controller = DummyController();
+      final commander = DummyCommander();
 
       // Dispatch 2 queued intents
       unawaited(
-          controller.dispatch(const QueuedSlowIntent()).catchError((_) {}));
-      final f2 = controller.dispatch(const QueuedSlowIntent());
+          commander.dispatch(const QueuedSlowIntent()).catchError((_) {}));
+      final f2 = commander.dispatch(const QueuedSlowIntent());
 
       final expectation =
           expectLater(f2, throwsA(isA<CancellationException>()));
 
       // Dispose while queue is blocked
-      controller.dispose();
+      commander.dispose();
 
       // Wait for expectation
       await expectation;
@@ -162,16 +162,16 @@ void main() {
 
     testWidgets('CommanderScope.of with listen: true finds and rebuilds',
         (tester) async {
-      final controller = DummyController();
+      final commander = DummyCommander();
 
       await tester.pumpWidget(
         MaterialApp(
-          home: CommanderScope<DummyController>.value(
-            value: controller,
+          home: CommanderScope<DummyCommander>.value(
+            value: commander,
             child: Builder(
               builder: (context) {
                 final c =
-                    CommanderScope.of<DummyController>(context, listen: true);
+                    CommanderScope.of<DummyCommander>(context, listen: true);
                 return Text('Count: ${c.state.count}');
               },
             ),
@@ -181,11 +181,11 @@ void main() {
 
       expect(find.text('Count: 0'), findsOneWidget);
 
-      await controller.dispatch(const DerivedIntent());
+      await commander.dispatch(const DerivedIntent());
       await tester.pump();
 
       expect(find.text('Count: 1'), findsOneWidget);
-      controller.dispose();
+      commander.dispose();
     });
 
     testWidgets('CommanderScope.of throws FlutterError when scope not found',
@@ -195,12 +195,11 @@ void main() {
           home: Builder(
             builder: (context) {
               expect(
-                () =>
-                    CommanderScope.of<DummyController>(context, listen: false),
+                () => CommanderScope.of<DummyCommander>(context, listen: false),
                 throwsA(isA<FlutterError>()),
               );
               expect(
-                () => CommanderScope.of<DummyController>(context, listen: true),
+                () => CommanderScope.of<DummyCommander>(context, listen: true),
                 throwsA(isA<FlutterError>()),
               );
               return const SizedBox.shrink();
@@ -210,19 +209,19 @@ void main() {
       );
     });
 
-    testWidgets('CommanderScope didUpdateWidget updates controller listener',
+    testWidgets('CommanderScope didUpdateWidget updates commander listener',
         (tester) async {
-      final controllerA = DummyController();
-      final controllerB = DummyController();
+      final commanderA = DummyCommander();
+      final commanderB = DummyCommander();
 
       await tester.pumpWidget(
         MaterialApp(
-          home: CommanderScope<DummyController>.value(
-            value: controllerA,
+          home: CommanderScope<DummyCommander>.value(
+            value: commanderA,
             child: Builder(
               builder: (context) {
                 final c =
-                    CommanderScope.of<DummyController>(context, listen: true);
+                    CommanderScope.of<DummyCommander>(context, listen: true);
                 return Text('Count: ${c.state.count}');
               },
             ),
@@ -232,15 +231,15 @@ void main() {
 
       expect(find.text('Count: 0'), findsOneWidget);
 
-      // Swap controller
+      // Swap commander
       await tester.pumpWidget(
         MaterialApp(
-          home: CommanderScope<DummyController>.value(
-            value: controllerB,
+          home: CommanderScope<DummyCommander>.value(
+            value: commanderB,
             child: Builder(
               builder: (context) {
                 final c =
-                    CommanderScope.of<DummyController>(context, listen: true);
+                    CommanderScope.of<DummyCommander>(context, listen: true);
                 return Text('Count: ${c.state.count}');
               },
             ),
@@ -248,23 +247,23 @@ void main() {
         ),
       );
 
-      await controllerB.dispatch(const DerivedIntent());
+      await commanderB.dispatch(const DerivedIntent());
       await tester.pump();
       expect(find.text('Count: 1'), findsOneWidget);
 
-      controllerA.dispose();
-      controllerB.dispose();
+      commanderA.dispose();
+      commanderB.dispose();
     });
 
-    testWidgets('CommanderBuilder didUpdateWidget updates controller instance',
+    testWidgets('CommanderBuilder didUpdateWidget updates commander instance',
         (tester) async {
-      final controller1 = DummyController();
-      final controller2 = DummyController();
+      final commander1 = DummyCommander();
+      final commander2 = DummyCommander();
 
       await tester.pumpWidget(
         MaterialApp(
-          home: CommanderBuilder<DummyController, DummyState, int>(
-            controller: controller1,
+          home: CommanderBuilder<DummyCommander, DummyState, int>(
+            commander: commander1,
             select: (s) => s.count,
             builder: (context, count) => Text('Count: $count'),
           ),
@@ -275,32 +274,32 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: CommanderBuilder<DummyController, DummyState, int>(
-            controller: controller2,
+          home: CommanderBuilder<DummyCommander, DummyState, int>(
+            commander: commander2,
             select: (s) => s.count,
             builder: (context, count) => Text('Count: $count'),
           ),
         ),
       );
 
-      await controller2.dispatch(const DerivedIntent());
+      await commander2.dispatch(const DerivedIntent());
       await tester.pump();
       expect(find.text('Count: 1'), findsOneWidget);
 
-      controller1.dispose();
-      controller2.dispose();
+      commander1.dispose();
+      commander2.dispose();
     });
 
-    testWidgets('CommanderListener didUpdateWidget updates controller instance',
+    testWidgets('CommanderListener didUpdateWidget updates commander instance',
         (tester) async {
-      final controller1 = DummyController();
-      final controller2 = DummyController();
+      final commander1 = DummyCommander();
+      final commander2 = DummyCommander();
       var received = 0;
 
       await tester.pumpWidget(
         MaterialApp(
-          home: CommanderListener<DummyController, DummyEffect>(
-            controller: controller1,
+          home: CommanderListener<DummyCommander, DummyEffect>(
+            commander: commander1,
             onEffect: (context, effect) => received++,
             child: const SizedBox.shrink(),
           ),
@@ -309,16 +308,16 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: CommanderListener<DummyController, DummyEffect>(
-            controller: controller2,
+          home: CommanderListener<DummyCommander, DummyEffect>(
+            commander: commander2,
             onEffect: (context, effect) => received++,
             child: const SizedBox.shrink(),
           ),
         ),
       );
 
-      controller1.dispose();
-      controller2.dispose();
+      commander1.dispose();
+      commander2.dispose();
     });
 
     test(
@@ -334,19 +333,19 @@ void main() {
           TestCommandScope<DummyState, DummyEffect>(const DummyState(42));
       expect(testScope.initialState, equals(const DummyState(42)));
 
-      final controller = DummyController();
-      expect(controller.isDisposed, isFalse);
-      controller.dispose();
-      expect(controller.isDisposed, isTrue);
+      final commander = DummyCommander();
+      expect(commander.isDisposed, isFalse);
+      commander.dispose();
+      expect(commander.isDisposed, isTrue);
     });
 
     test('Queue processing handles command error gracefully', () async {
-      final controller = CommanderControllerWithFailingQueue();
+      final commander = CommanderWithFailingQueue();
       await expectLater(
-        controller.dispatch(const QueuedFailingIntent()),
+        commander.dispatch(const QueuedFailingIntent()),
         throwsA(isA<Exception>()),
       );
-      controller.dispose();
+      commander.dispose();
     });
   });
 }
@@ -367,9 +366,8 @@ class QueuedFailingCommand
   }
 }
 
-class CommanderControllerWithFailingQueue
-    extends CommanderController<DummyState, DummyEffect> {
-  CommanderControllerWithFailingQueue() : super(const DummyState(0)) {
+class CommanderWithFailingQueue extends Commander<DummyState, DummyEffect> {
+  CommanderWithFailingQueue() : super(const DummyState(0)) {
     bind(QueuedFailingCommand());
   }
 }

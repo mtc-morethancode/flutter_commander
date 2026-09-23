@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter_commander/flutter_commander.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-// Test Controller State & Effects
+// Test Commander State & Effects
 class TestState {
   final List<String> logs;
   final int count;
@@ -135,14 +135,13 @@ class ConcurrentCommand
   }
 }
 
-class ConcurrencyTestController
-    extends CommanderController<TestState, TestEffect> {
+class ConcurrencyTestCommander extends Commander<TestState, TestEffect> {
   final DropCommand dropCommand;
   final RestartCommand restartCommand;
   final QueueCommand queueCommand;
   final ConcurrentCommand concurrentCommand;
 
-  ConcurrencyTestController({
+  ConcurrencyTestCommander({
     required this.dropCommand,
     required this.restartCommand,
     required this.queueCommand,
@@ -161,14 +160,14 @@ void main() {
     late RestartCommand restartCommand;
     late QueueCommand queueCommand;
     late ConcurrentCommand concurrentCommand;
-    late ConcurrencyTestController controller;
+    late ConcurrencyTestCommander commander;
 
     setUp(() {
       dropCommand = DropCommand();
       restartCommand = RestartCommand();
       queueCommand = QueueCommand();
       concurrentCommand = ConcurrentCommand();
-      controller = ConcurrencyTestController(
+      commander = ConcurrencyTestCommander(
         dropCommand: dropCommand,
         restartCommand: restartCommand,
         queueCommand: queueCommand,
@@ -177,17 +176,17 @@ void main() {
     });
 
     tearDown(() {
-      controller.dispose();
+      commander.dispose();
     });
 
     test('DROP: ignores secondary intents while first is running', () async {
       // Dispatch first intent (will block on completer)
-      final future1 = controller.dispatch(const DropIntent('1'));
+      final future1 = commander.dispatch(const DropIntent('1'));
       expect(dropCommand.executionsStarted, equals(1));
 
       // Dispatch second and third while first is active
-      final future2 = controller.dispatch(const DropIntent('2'));
-      final future3 = controller.dispatch(const DropIntent('3'));
+      final future2 = commander.dispatch(const DropIntent('2'));
+      final future3 = commander.dispatch(const DropIntent('3'));
 
       // Both should have been dropped immediately
       expect(dropCommand.executionsStarted, equals(1));
@@ -197,16 +196,16 @@ void main() {
       await Future.wait([future1, future2, future3]);
 
       expect(dropCommand.executionsCompleted, equals(1));
-      expect(controller.state.logs, equals(['drop_1']));
+      expect(commander.state.logs, equals(['drop_1']));
     });
 
     test('RESTART: cancels active execution and starts new one', () async {
       // Dispatch query A
-      unawaited(controller.dispatch(const RestartIntent('flutter')));
+      unawaited(commander.dispatch(const RestartIntent('flutter')));
       expect(restartCommand.startedQueries, equals(['flutter']));
 
       // Dispatch query B immediately (restarts)
-      unawaited(controller.dispatch(const RestartIntent('flutter_commander')));
+      unawaited(commander.dispatch(const RestartIntent('flutter_commander')));
       expect(restartCommand.startedQueries,
           equals(['flutter', 'flutter_commander']));
 
@@ -219,25 +218,25 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 10));
 
       expect(restartCommand.completedQueries, equals(['flutter_commander']));
-      expect(controller.state.logs, equals(['restart_flutter_commander']));
+      expect(commander.state.logs, equals(['restart_flutter_commander']));
     });
 
     test('QUEUE: executes sequentially in FIFO order', () async {
-      final f1 = controller.dispatch(const QueueIntent(1));
-      final f2 = controller.dispatch(const QueueIntent(2));
-      final f3 = controller.dispatch(const QueueIntent(3));
+      final f1 = commander.dispatch(const QueueIntent(1));
+      final f2 = commander.dispatch(const QueueIntent(2));
+      final f3 = commander.dispatch(const QueueIntent(3));
 
       await Future.wait([f1, f2, f3]);
 
       expect(queueCommand.processedOrder, equals([1, 2, 3]));
-      expect(controller.state.count, equals(3));
+      expect(commander.state.count, equals(3));
     });
 
     test('CONCURRENT: runs invocations simultaneously without blocking',
         () async {
-      final f1 = controller.dispatch(const ConcurrentIntent(1));
-      final f2 = controller.dispatch(const ConcurrentIntent(2));
-      final f3 = controller.dispatch(const ConcurrentIntent(3));
+      final f1 = commander.dispatch(const ConcurrentIntent(1));
+      final f2 = commander.dispatch(const ConcurrentIntent(2));
+      final f3 = commander.dispatch(const ConcurrentIntent(3));
 
       await Future.wait([f1, f2, f3]);
 
