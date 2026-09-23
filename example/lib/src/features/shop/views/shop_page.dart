@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_commander/flutter_commander.dart';
 
-import '../controller/shop_commander.dart';
-import '../controller/shop_effect.dart';
-import '../controller/shop_state.dart';
+import '../commander/shop_commander.dart';
+import '../commander/shop_effect.dart';
+import '../commander/shop_state.dart';
 import 'widgets/analytics_section.dart';
 import 'widgets/checkout_section.dart';
 import 'widgets/search_section.dart';

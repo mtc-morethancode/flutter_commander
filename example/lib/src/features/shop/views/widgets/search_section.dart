@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_commander/flutter_commander.dart';
 
 import '../../../../core/models/product.dart';
-import '../../controller/shop_commander.dart';
-import '../../controller/shop_state.dart';
+import '../../commander/shop_commander.dart';
+import '../../commander/shop_state.dart';
 import '../../intents/shop_intents.dart';
 
 /// Product search bar showcasing [ExecutionPolicy.restart].

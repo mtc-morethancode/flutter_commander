@@ -4,7 +4,7 @@ import 'package:flutter_commander/flutter_commander.dart';
 import 'src/core/services/analytics_service.dart';
 import 'src/core/services/catalog_service.dart';
 import 'src/core/services/payment_service.dart';
-import 'src/features/shop/controller/shop_commander.dart';
+import 'src/features/shop/commander/shop_commander.dart';
 import 'src/features/shop/views/shop_page.dart';
 
 void main() {

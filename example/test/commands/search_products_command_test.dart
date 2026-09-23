@@ -2,8 +2,8 @@ import 'package:flutter_commander/flutter_commander.dart';
 import 'package:flutter_commander_example/src/core/models/product.dart';
 import 'package:flutter_commander_example/src/core/services/catalog_service.dart';
 import 'package:flutter_commander_example/src/features/shop/commands/search_products_command.dart';
-import 'package:flutter_commander_example/src/features/shop/controller/shop_effect.dart';
-import 'package:flutter_commander_example/src/features/shop/controller/shop_state.dart';
+import 'package:flutter_commander_example/src/features/shop/commander/shop_effect.dart';
+import 'package:flutter_commander_example/src/features/shop/commander/shop_state.dart';
 import 'package:flutter_commander_example/src/features/shop/intents/shop_intents.dart';
 import 'package:flutter_test/flutter_test.dart';
 

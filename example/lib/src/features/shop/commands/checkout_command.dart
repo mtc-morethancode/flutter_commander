@@ -1,8 +1,8 @@
 import 'package:flutter_commander/flutter_commander.dart';
 
 import '../../../core/services/payment_service.dart';
-import '../controller/shop_effect.dart';
-import '../controller/shop_state.dart';
+import '../commander/shop_effect.dart';
+import '../commander/shop_state.dart';
 import '../intents/shop_intents.dart';
 
 /// Handles order checkout with [ExecutionPolicy.drop].

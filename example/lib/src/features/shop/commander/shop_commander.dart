@@ -43,6 +43,3 @@ class ShopCommander extends Commander<ShopState, ShopEffect> {
     });
   }
 }
-
-/// Backward-compatible alias for [ShopCommander].
-typedef ShopController = ShopCommander;
