@@ -14,6 +14,8 @@
 flutter pub add flutter_commander
 ```
 
+> 🔄 **Migrating from BLoC or Riverpod?** Check out our step-by-step [**Migration Guide (Human & AI-Ready)**](doc/migration_guide.md) with side-by-side code comparisons and copy-paste prompts for AI assistants (Cursor, Copilot, Claude).
+
 ---
 
 ## ⚡ 3-Minute Quickstart
