@@ -404,4 +404,4 @@ class CartView extends StatelessWidget {
 - [ ] **Eliminate Double-Taps**: Change submit and checkout buttons to `ExecutionPolicy.drop`.
 - [ ] **Debounce Searches**: Use `ExecutionPolicy.restart` and `get debounce => const Duration(milliseconds: 300);`.
 - [ ] **Keep States Immutable**: Always return a new instance from `updateState((s) => s.copyWith(...))`.
-- [ ] **Test Units with `TestCommandScope`**: Don't mock streams or controllers for use-case testing—test `Command.execute()` directly.
+- [ ] **Test Units with `TestCommandScope`**: Don't mock streams, notifiers, or commanders for use-case testing—test `Command.execute()` directly.

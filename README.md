@@ -321,8 +321,6 @@ class CartCommander extends Commander<CartState, CartEffect> {
 }
 ```
 
-> **💡 Note on Naming:** Your state & use-case orchestrators extend `Commander<S, E>` (e.g. `CartCommander`, `ShopCommander`). For teams that prefer controller terminology, `typedef CommanderController<S, E> = Commander<S, E>;` is available out-of-the-box.
-
 ---
 
 ### 4. Reactive Flutter UI Integration
