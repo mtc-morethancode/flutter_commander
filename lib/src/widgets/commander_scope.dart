@@ -206,14 +206,14 @@ class _SelectorAspect<S, R> implements _Aspect {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    if (other is! _SelectorAspect) return false;
+    if (other is! _SelectorAspect<S, R>) return false;
     if (aspectKey != null && other.aspectKey != null) {
       return aspectKey == other.aspectKey;
     }
-    return selector == other.selector;
+    return identical(selector, other.selector);
   }
 
   @override
   int get hashCode =>
-      aspectKey != null ? aspectKey.hashCode : selector.hashCode;
+      aspectKey != null ? aspectKey.hashCode : identityHashCode(selector);
 }
