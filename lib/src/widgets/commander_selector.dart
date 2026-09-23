@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 
-import '../controller/commander.dart';
+import '../commander/commander.dart';
 import 'commander_builder.dart';
 
 /// Rebuilds widget subtrees reactively based on a selected slice [R] of state [S].
@@ -18,7 +18,7 @@ import 'commander_builder.dart';
 class CommanderSelector<C extends Commander<S, dynamic>, S, R>
     extends StatelessWidget {
   /// Optional commander instance. If omitted, resolved from the nearest [CommanderScope].
-  final C? controller;
+  final C? commander;
 
   /// Selector mapping full state [S] to selected slice [R].
   final R Function(S state) select;
@@ -32,7 +32,7 @@ class CommanderSelector<C extends Commander<S, dynamic>, S, R>
   /// Creates a [CommanderSelector].
   const CommanderSelector({
     super.key,
-    this.controller,
+    this.commander,
     required this.select,
     required this.builder,
     this.buildWhen,
@@ -41,7 +41,7 @@ class CommanderSelector<C extends Commander<S, dynamic>, S, R>
   @override
   Widget build(BuildContext context) {
     return CommanderBuilder<C, S, R>(
-      controller: controller,
+      commander: commander,
       select: select,
       buildWhen: buildWhen,
       builder: builder,

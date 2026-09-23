@@ -5,7 +5,7 @@ import 'cancellation_token.dart';
 /// Gives access to the current state, synchronous state updates via pure reducers,
 /// one-shot side-effect emissions, and collaborative cancellation tokens.
 abstract interface class CommandScope<S, E> {
-  /// The current state of the controller.
+  /// The current state of the commander.
   S get state;
 
   /// Updates the state synchronously using a pure [reducer] function.

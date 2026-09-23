@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 
-import '../controller/commander.dart';
+import '../commander/commander.dart';
 import 'commander_listener.dart';
 import 'commander_state_builder.dart';
 
@@ -19,7 +19,7 @@ import 'commander_state_builder.dart';
 class CommanderStateConsumer<C extends Commander<S, E>, S, E>
     extends StatelessWidget {
   /// Optional commander instance. If omitted, resolved from the nearest [CommanderScope].
-  final C? controller;
+  final C? commander;
 
   /// Callback executed when an effect is emitted.
   final void Function(BuildContext context, E effect) onEffect;
@@ -36,7 +36,7 @@ class CommanderStateConsumer<C extends Commander<S, E>, S, E>
   /// Creates a [CommanderStateConsumer].
   const CommanderStateConsumer({
     super.key,
-    this.controller,
+    this.commander,
     required this.onEffect,
     this.listenWhen,
     required this.builder,
@@ -46,11 +46,11 @@ class CommanderStateConsumer<C extends Commander<S, E>, S, E>
   @override
   Widget build(BuildContext context) {
     return CommanderListener<C, E>(
-      controller: controller,
+      commander: commander,
       onEffect: onEffect,
       listenWhen: listenWhen,
       child: CommanderStateBuilder<C, S>(
-        controller: controller,
+        commander: commander,
         buildWhen: buildWhen,
         builder: builder,
       ),

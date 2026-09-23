@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 
-import '../controller/commander.dart';
+import '../commander/commander.dart';
 
 /// Injects and manages the lifecycle of a [Commander] in the widget tree.
 ///
@@ -55,7 +55,7 @@ class CommanderScope<C extends Commander<dynamic, dynamic>>
           'Ensure the widget is wrapped within a CommanderScope<$C>.',
         );
       }
-      return model.controller;
+      return model.commander;
     } else {
       final element = context.getElementForInheritedWidgetOfExactType<
           _CommanderInheritedModel<C>>();
@@ -66,7 +66,7 @@ class CommanderScope<C extends Commander<dynamic, dynamic>>
           'Ensure the widget is wrapped within a CommanderScope<$C>.',
         );
       }
-      return widget.controller;
+      return widget.commander;
     }
   }
 
@@ -86,8 +86,8 @@ class CommanderScope<C extends Commander<dynamic, dynamic>>
     Object? aspectKey,
   }) {
     // 1. Obtain commander without registering a full rebuild dependency
-    final controller = of<C>(context, listen: false) as Commander<S, dynamic>;
-    final currentValue = selector(controller.state);
+    final commander = of<C>(context, listen: false) as Commander<S, dynamic>;
+    final currentValue = selector(commander.state);
 
     // 2. Register fine-grained aspect dependency
     final aspect = _SelectorAspect<S, R>(selector, aspectKey);
@@ -103,17 +103,17 @@ class CommanderScope<C extends Commander<dynamic, dynamic>>
 
 class _CommanderScopeState<C extends Commander<dynamic, dynamic>>
     extends State<CommanderScope<C>> {
-  late C _controller;
+  late C _commander;
 
   @override
   void initState() {
     super.initState();
     if (widget.create != null) {
-      _controller = widget.create!(context);
+      _commander = widget.create!(context);
     } else {
-      _controller = widget.value!;
+      _commander = widget.value!;
     }
-    _controller.addListener(_onStateChanged);
+    _commander.addListener(_onStateChanged);
   }
 
   @override
@@ -121,8 +121,8 @@ class _CommanderScopeState<C extends Commander<dynamic, dynamic>>
     super.didUpdateWidget(oldWidget);
     if (widget.value != null && widget.value != oldWidget.value) {
       oldWidget.value?.removeListener(_onStateChanged);
-      _controller = widget.value!;
-      _controller.addListener(_onStateChanged);
+      _commander = widget.value!;
+      _commander.addListener(_onStateChanged);
     }
   }
 
@@ -132,9 +132,9 @@ class _CommanderScopeState<C extends Commander<dynamic, dynamic>>
 
   @override
   void dispose() {
-    _controller.removeListener(_onStateChanged);
+    _commander.removeListener(_onStateChanged);
     if (widget.autoDispose) {
-      _controller.dispose();
+      _commander.dispose();
     }
     super.dispose();
   }
@@ -142,8 +142,8 @@ class _CommanderScopeState<C extends Commander<dynamic, dynamic>>
   @override
   Widget build(BuildContext context) {
     return _CommanderInheritedModel<C>(
-      controller: _controller,
-      state: _controller.state,
+      commander: _commander,
+      state: _commander.state,
       child: widget.child,
     );
   }
@@ -151,12 +151,12 @@ class _CommanderScopeState<C extends Commander<dynamic, dynamic>>
 
 class _CommanderInheritedModel<C extends Commander<dynamic, dynamic>>
     extends InheritedModel<_Aspect> {
-  final C controller;
+  final C commander;
   final dynamic state;
 
   const _CommanderInheritedModel({
     super.key,
-    required this.controller,
+    required this.commander,
     required this.state,
     required super.child,
   });

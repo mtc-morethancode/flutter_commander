@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 
-import '../controller/commander.dart';
+import '../commander/commander.dart';
 import 'commander_builder.dart';
 
 /// Rebuilds widget subtrees reactively based on a [Commander]'s full state [S].
@@ -17,7 +17,7 @@ import 'commander_builder.dart';
 class CommanderStateBuilder<C extends Commander<S, dynamic>, S>
     extends StatelessWidget {
   /// Optional commander instance. If omitted, resolved from the nearest [CommanderScope].
-  final C? controller;
+  final C? commander;
 
   /// Widget builder function invoked with the full current [S] state.
   final Widget Function(BuildContext context, S state) builder;
@@ -28,7 +28,7 @@ class CommanderStateBuilder<C extends Commander<S, dynamic>, S>
   /// Creates a [CommanderStateBuilder].
   const CommanderStateBuilder({
     super.key,
-    this.controller,
+    this.commander,
     required this.builder,
     this.buildWhen,
   });
@@ -36,7 +36,7 @@ class CommanderStateBuilder<C extends Commander<S, dynamic>, S>
   @override
   Widget build(BuildContext context) {
     return CommanderBuilder<C, S, S>(
-      controller: controller,
+      commander: commander,
       builder: builder,
       buildWhen: buildWhen,
     );

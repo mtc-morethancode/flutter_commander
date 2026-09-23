@@ -238,6 +238,3 @@ abstract class Commander<S, E>
     super.dispose();
   }
 }
-
-/// Backward-compatible alias for [Commander].
-typedef CommanderController<S, E> = Commander<S, E>;

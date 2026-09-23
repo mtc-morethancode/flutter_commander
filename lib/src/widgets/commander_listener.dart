@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 
-import '../controller/commander.dart';
+import '../commander/commander.dart';
 import 'commander_scope.dart';
 
 /// Listens exclusively to one-shot side effect emissions of type [E] from a [Commander]
@@ -27,7 +27,7 @@ import 'commander_scope.dart';
 class CommanderListener<C extends Commander<dynamic, E>, E>
     extends StatefulWidget {
   /// Optional commander instance. If omitted, resolved from the nearest [CommanderScope].
-  final C? controller;
+  final C? commander;
 
   /// Callback executed whenever an effect is emitted.
   final void Function(BuildContext context, E effect) onEffect;
@@ -41,7 +41,7 @@ class CommanderListener<C extends Commander<dynamic, E>, E>
   /// Creates a [CommanderListener].
   const CommanderListener({
     super.key,
-    this.controller,
+    this.commander,
     required this.onEffect,
     this.listenWhen,
     required this.child,
@@ -54,7 +54,7 @@ class CommanderListener<C extends Commander<dynamic, E>, E>
 
 class _CommanderListenerState<C extends Commander<dynamic, E>, E>
     extends State<CommanderListener<C, E>> {
-  C? _controller;
+  C? _commander;
   StreamSubscription<E>? _subscription;
 
   @override
@@ -66,20 +66,20 @@ class _CommanderListenerState<C extends Commander<dynamic, E>, E>
   @override
   void didUpdateWidget(CommanderListener<C, E> oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.controller != oldWidget.controller) {
+    if (widget.commander != oldWidget.commander) {
       _subscribe();
     }
   }
 
   void _subscribe() {
-    final controller =
-        widget.controller ?? CommanderScope.of<C>(context, listen: false);
-    if (_controller == controller) return;
+    final commander =
+        widget.commander ?? CommanderScope.of<C>(context, listen: false);
+    if (_commander == commander) return;
 
     _subscription?.cancel();
-    _controller = controller;
+    _commander = commander;
 
-    _subscription = _controller!.effects.listen((effect) {
+    _subscription = _commander!.effects.listen((effect) {
       if (!mounted) return;
       if (widget.listenWhen != null && !widget.listenWhen!(effect)) {
         return;

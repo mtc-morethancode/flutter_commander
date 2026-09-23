@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 
-import '../controller/commander.dart';
+import '../commander/commander.dart';
 import 'commander_scope.dart';
 
 /// Rebuilds widget subtrees reactively based on a [Commander]'s state.
@@ -24,7 +24,7 @@ import 'commander_scope.dart';
 class CommanderBuilder<C extends Commander<S, dynamic>, S, R>
     extends StatefulWidget {
   /// Optional commander instance. If omitted, resolved from the nearest [CommanderScope].
-  final C? controller;
+  final C? commander;
 
   /// Selector mapping full state [S] to selected slice [R].
   /// If null, [S] is cast to [R].
@@ -39,7 +39,7 @@ class CommanderBuilder<C extends Commander<S, dynamic>, S, R>
   /// Creates a [CommanderBuilder].
   const CommanderBuilder({
     super.key,
-    this.controller,
+    this.commander,
     this.select,
     required this.builder,
     this.buildWhen,
@@ -52,7 +52,7 @@ class CommanderBuilder<C extends Commander<S, dynamic>, S, R>
 
 class _CommanderBuilderState<C extends Commander<S, dynamic>, S, R>
     extends State<CommanderBuilder<C, S, R>> {
-  C? _controller;
+  C? _commander;
   late R _currentValue;
 
   @override
@@ -64,24 +64,24 @@ class _CommanderBuilderState<C extends Commander<S, dynamic>, S, R>
   @override
   void didUpdateWidget(CommanderBuilder<C, S, R> oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.controller != oldWidget.controller) {
+    if (widget.commander != oldWidget.commander) {
       _subscribe();
     } else if (widget.select != oldWidget.select) {
-      if (_controller != null) {
-        _currentValue = _computeValue(_controller!.state);
+      if (_commander != null) {
+        _currentValue = _computeValue(_commander!.state);
       }
     }
   }
 
   void _subscribe() {
-    final controller =
-        widget.controller ?? CommanderScope.of<C>(context, listen: false);
-    if (_controller == controller) return;
+    final commander =
+        widget.commander ?? CommanderScope.of<C>(context, listen: false);
+    if (_commander == commander) return;
 
-    _controller?.removeListener(_onStateChanged);
-    _controller = controller;
-    _controller!.addListener(_onStateChanged);
-    _currentValue = _computeValue(_controller!.state);
+    _commander?.removeListener(_onStateChanged);
+    _commander = commander;
+    _commander!.addListener(_onStateChanged);
+    _currentValue = _computeValue(_commander!.state);
   }
 
   R _computeValue(S state) {
@@ -92,10 +92,10 @@ class _CommanderBuilderState<C extends Commander<S, dynamic>, S, R>
   }
 
   void _onStateChanged() {
-    final controller = _controller;
-    if (controller == null) return;
+    final commander = _commander;
+    if (commander == null) return;
 
-    final newValue = _computeValue(controller.state);
+    final newValue = _computeValue(commander.state);
     final shouldRebuild = widget.buildWhen != null
         ? widget.buildWhen!(_currentValue, newValue)
         : !identical(_currentValue, newValue) && _currentValue != newValue;
@@ -109,8 +109,8 @@ class _CommanderBuilderState<C extends Commander<S, dynamic>, S, R>
 
   @override
   void dispose() {
-    _controller?.removeListener(_onStateChanged);
-    _controller = null;
+    _commander?.removeListener(_onStateChanged);
+    _commander = null;
     super.dispose();
   }
 

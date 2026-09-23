@@ -14,7 +14,7 @@ abstract class CommandInterceptor {
   void onAfterExecute(
       Command<dynamic, dynamic, dynamic> command, CommandIntent intent) {}
 
-  /// Invoked whenever the controller's state is updated.
+  /// Invoked whenever the commander's state is updated.
   void onStateChanged(dynamic oldState, dynamic newState) {}
 
   /// Invoked whenever a side effect is emitted.

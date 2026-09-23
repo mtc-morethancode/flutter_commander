@@ -1,4 +1,4 @@
-import '../controller/commander.dart';
+import '../commander/commander.dart';
 import 'command.dart';
 import 'intent.dart';
 
@@ -26,12 +26,7 @@ abstract class CommanderObserver {
   const CommanderObserver();
 
   /// Invoked when a [commander] is instantiated.
-  void onCommanderCreated(Commander<dynamic, dynamic> commander) {
-    onControllerCreated(commander);
-  }
-
-  /// Backward-compatible hook for [onCommanderCreated].
-  void onControllerCreated(Commander<dynamic, dynamic> controller) {}
+  void onCommanderCreated(Commander<dynamic, dynamic> commander) {}
 
   /// Invoked immediately before a [command] begins execution.
   void onBeforeExecute(
@@ -70,10 +65,5 @@ abstract class CommanderObserver {
   ) {}
 
   /// Invoked when a [commander] is disposed.
-  void onCommanderDisposed(Commander<dynamic, dynamic> commander) {
-    onControllerDisposed(commander);
-  }
-
-  /// Backward-compatible hook for [onCommanderDisposed].
-  void onControllerDisposed(Commander<dynamic, dynamic> controller) {}
+  void onCommanderDisposed(Commander<dynamic, dynamic> commander) {}
 }

@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 
-import '../controller/commander.dart';
+import '../commander/commander.dart';
 import 'commander_builder.dart';
 import 'commander_listener.dart';
 
@@ -10,7 +10,7 @@ import 'commander_listener.dart';
 class CommanderConsumer<C extends Commander<S, E>, S, E, R>
     extends StatelessWidget {
   /// Optional commander instance. If omitted, resolved from the nearest [CommanderScope].
-  final C? controller;
+  final C? commander;
 
   /// Selector mapping full state [S] to selected slice [R].
   /// If null, [S] is cast to [R].
@@ -31,7 +31,7 @@ class CommanderConsumer<C extends Commander<S, E>, S, E, R>
   /// Creates a [CommanderConsumer].
   const CommanderConsumer({
     super.key,
-    this.controller,
+    this.commander,
     this.select,
     required this.onEffect,
     this.listenWhen,
@@ -42,11 +42,11 @@ class CommanderConsumer<C extends Commander<S, E>, S, E, R>
   @override
   Widget build(BuildContext context) {
     return CommanderListener<C, E>(
-      controller: controller,
+      commander: commander,
       onEffect: onEffect,
       listenWhen: listenWhen,
       child: CommanderBuilder<C, S, R>(
-        controller: controller,
+        commander: commander,
         select: select,
         buildWhen: buildWhen,
         builder: builder,

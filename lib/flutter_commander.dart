@@ -12,9 +12,8 @@ export 'src/core/execution_policy.dart';
 export 'src/core/intent.dart';
 export 'src/core/logging_interceptor.dart';
 
-// Controller / Commander
-export 'src/controller/commander.dart';
-export 'src/controller/commander_controller.dart';
+// Commander
+export 'src/commander/commander.dart';
 
 // Widgets
 export 'src/widgets/commander_builder.dart';
