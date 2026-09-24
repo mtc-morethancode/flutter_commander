@@ -24,6 +24,7 @@ export 'src/widgets/commander_scope.dart';
 export 'src/widgets/commander_selector.dart';
 export 'src/widgets/commander_state_builder.dart';
 export 'src/widgets/commander_state_consumer.dart';
+export 'src/widgets/commander_view.dart';
 
 // Testing
 export 'src/testing/test_command_scope.dart';

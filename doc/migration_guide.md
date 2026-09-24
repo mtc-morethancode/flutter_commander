@@ -77,7 +77,7 @@ Follow these strict migration rules from doc/migration_guide.md:
 | `BlocBuilder` | `CommanderStateBuilder` / `CommanderBuilder` | Granular reactive rebuilds. |
 | `BlocSelector` | `CommanderSelector` / `context.select` | Targeted rebuilds based on value equality (`==`). |
 | `BlocListener` | `CommanderListener` | Dedicated listener strictly for one-shot effects. |
-| `BlocConsumer` | `CommanderStateConsumer` / `CommanderConsumer` | Combined state builder + effect listener. |
+| `BlocConsumer` / Nested Listener+Builder | `CommanderView` / `CommanderConsumer` | **`CommanderView` eliminates nesting entirely**: a single class provides `state`, `onEffect`, and `dispatch`. |
 | `context.read<B>().add(Event())` | `context.dispatch<C>(Intent())` | Fire-and-forget intention dispatch. |
 | `blocTest` | `TestCommandScope` | **Synchronous & deterministic testing** without async stream delays or timers. |
 
