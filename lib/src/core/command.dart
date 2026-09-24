@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'command_scope.dart';
 import 'execution_policy.dart';
 import 'intent.dart';
@@ -48,6 +50,14 @@ abstract class Command<I extends CommandIntent, S, E> {
   /// If non-null, the policy applies independently to each unique key returned.
   Object? concurrencyKey(I intent) => null;
 
+  /// Internal helper to resolve concurrency key without dynamic invocation.
+  Object? resolveConcurrencyKey(CommandIntent intent) {
+    if (intent is I) {
+      return concurrencyKey(intent);
+    }
+    return null;
+  }
+
   /// Optional duration to debounce invocations of this command.
   ///
   /// If specified and greater than [Duration.zero], incoming invocations will wait
@@ -57,5 +67,7 @@ abstract class Command<I extends CommandIntent, S, E> {
   Duration? get debounce => null;
 
   /// Executes the command logic with the provided [scope] and triggering [intent].
-  Future<void> execute(CommandScope<S, E> scope, I intent);
+  ///
+  /// Can return [Future<void>] for asynchronous commands or [void] for synchronous actions.
+  FutureOr<void> execute(CommandScope<S, E> scope, I intent);
 }

@@ -16,11 +16,20 @@ class CancellationException implements Exception {
 /// Designed to support cooperative cancellation patterns in commands, such as
 /// when using [ExecutionPolicy.restart] or manual task abortion.
 class CancellationToken {
-  /// Creates a new, uncancelled [CancellationToken].
-  CancellationToken();
+  /// A singleton uncancelled token that never cancels and allocates no listener memory.
+  static final CancellationToken none = _NoneCancellationToken();
 
-  bool _isCancelled = false;
-  final List<void Function()> _listeners = [];
+  bool _isCancelled;
+  final List<void Function()>? _listeners;
+
+  /// Creates a new, uncancelled [CancellationToken].
+  CancellationToken()
+      : _isCancelled = false,
+        _listeners = <void Function()>[];
+
+  CancellationToken._internal()
+      : _isCancelled = false,
+        _listeners = null;
 
   /// Whether cancellation has been requested for this token.
   bool get isCancelled => _isCancelled;
@@ -30,8 +39,9 @@ class CancellationToken {
   void cancel() {
     if (_isCancelled) return;
     _isCancelled = true;
-    final listenersCopy = List<void Function()>.from(_listeners);
-    _listeners.clear();
+    if (_listeners == null || _listeners!.isEmpty) return;
+    final listenersCopy = List<void Function()>.from(_listeners!);
+    _listeners!.clear();
     for (final listener in listenersCopy) {
       try {
         listener();
@@ -54,7 +64,23 @@ class CancellationToken {
     if (_isCancelled) {
       callback();
     } else {
-      _listeners.add(callback);
+      _listeners?.add(callback);
     }
   }
+}
+
+class _NoneCancellationToken extends CancellationToken {
+  _NoneCancellationToken() : super._internal();
+
+  @override
+  bool get isCancelled => false;
+
+  @override
+  void cancel() {}
+
+  @override
+  void throwIfCancelled() {}
+
+  @override
+  void onCancelled(void Function() callback) {}
 }

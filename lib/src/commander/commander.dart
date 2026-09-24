@@ -167,15 +167,19 @@ abstract class Commander<S, E>
   /// Returns a [Future] completing when the command execution finishes
   /// (or completes immediately if dropped by [ExecutionPolicy.drop]).
   /// Throws [UnregisteredIntentException] if no command was registered for [intent].
-  Future<void> dispatch(CommandIntent intent) async {
-    if (_isDisposed) return;
+  Future<void> dispatch(CommandIntent intent) {
+    if (_isDisposed) return Future<void>.value();
 
     final command = _registry.find(intent);
     if (command == null) {
       throw UnregisteredIntentException(intent);
     }
 
-    await _runner.run(command, intent);
+    final result = _runner.run(command, intent);
+    if (result is Future) {
+      return result;
+    }
+    return Future<void>.value();
   }
 
   /// Updates the state using the provided pure [reducer].
@@ -195,11 +199,15 @@ abstract class Commander<S, E>
 
     _state = newState;
 
-    Commander.observer?.onStateChanged(this, oldState, newState);
-    for (final interceptor in _interceptors) {
-      try {
-        interceptor.onStateChanged(oldState, newState);
-      } catch (_) {}
+    if (Commander.observer != null) {
+      Commander.observer!.onStateChanged(this, oldState, newState);
+    }
+    if (_interceptors.isNotEmpty) {
+      for (var i = 0; i < _interceptors.length; i++) {
+        try {
+          _interceptors[i].onStateChanged(oldState, newState);
+        } catch (_) {}
+      }
     }
 
     notifyListeners();
@@ -212,11 +220,15 @@ abstract class Commander<S, E>
   void _handleEmitSideEffect(E effect) {
     if (_isDisposed) return;
 
-    Commander.observer?.onEffectEmitted(this, effect);
-    for (final interceptor in _interceptors) {
-      try {
-        interceptor.onEffectEmitted(effect);
-      } catch (_) {}
+    if (Commander.observer != null) {
+      Commander.observer!.onEffectEmitted(this, effect);
+    }
+    if (_interceptors.isNotEmpty) {
+      for (var i = 0; i < _interceptors.length; i++) {
+        try {
+          _interceptors[i].onEffectEmitted(effect);
+        } catch (_) {}
+      }
     }
 
     if (!_effectsController.isClosed) {

@@ -56,8 +56,8 @@ class CommandRunner<S, E> {
         _onError = onError;
 
   /// Runs [command] with [intent] respecting [command.debounce] and [command.policy].
-  Future<void> run(Command<dynamic, S, E> command, CommandIntent intent) async {
-    if (_isDisposed) return;
+  FutureOr<void> run(Command<dynamic, S, E> command, CommandIntent intent) {
+    if (_isDisposed) return null;
 
     if (command.debounce != null && command.debounce! > Duration.zero) {
       return _runDebounced(command, intent, command.debounce!);
@@ -101,7 +101,7 @@ class CommandRunner<S, E> {
     return completer.future;
   }
 
-  Future<void> _dispatchToPolicy(
+  FutureOr<void> _dispatchToPolicy(
       Command<dynamic, S, E> command, CommandIntent intent) {
     switch (command.policy) {
       case ExecutionPolicy.drop:
@@ -117,35 +117,33 @@ class CommandRunner<S, E> {
 
   Object? _getConcurrencyKey(
       Command<dynamic, S, E> command, CommandIntent intent) {
-    try {
-      return (command as dynamic).concurrencyKey(intent);
-    } catch (_) {
-      return null;
-    }
+    return command.resolveConcurrencyKey(intent);
   }
 
-  Future<void> _runDrop(
-      Command<dynamic, S, E> command, CommandIntent intent) async {
+  FutureOr<void> _runDrop(
+      Command<dynamic, S, E> command, CommandIntent intent) {
     final execKey = _ExecutionKey(command, _getConcurrencyKey(command, intent));
     final active = _activeExecutions[execKey];
     if (active != null) {
       // An execution is currently running for this key; drop this invocation immediately.
-      return;
+      return null;
     }
 
     final token = CancellationToken();
     _activeTokens[execKey] = token;
 
-    final executionFuture = _executeCommand(command, intent, token);
-    _activeExecutions[execKey] = executionFuture;
-
-    try {
-      await executionFuture;
-    } finally {
-      if (_activeExecutions[execKey] == executionFuture) {
-        unawaited(_activeExecutions.remove(execKey));
-        _activeTokens.remove(execKey);
-      }
+    final execution = _executeCommand(command, intent, token);
+    if (execution is Future) {
+      _activeExecutions[execKey] = execution;
+      return execution.whenComplete(() {
+        if (_activeExecutions[execKey] == execution) {
+          _activeExecutions.remove(execKey);
+          _activeTokens.remove(execKey);
+        }
+      });
+    } else {
+      _activeTokens.remove(execKey);
+      return null;
     }
   }
 
@@ -163,16 +161,20 @@ class CommandRunner<S, E> {
     final token = CancellationToken();
     _activeTokens[execKey] = token;
 
-    final executionFuture = _executeCommand(command, intent, token);
-    _activeExecutions[execKey] = executionFuture;
-
-    try {
-      await executionFuture;
-    } finally {
-      if (_activeTokens[execKey] == token) {
-        _activeTokens.remove(execKey);
-        unawaited(_activeExecutions.remove(execKey));
+    final execution = _executeCommand(command, intent, token);
+    if (execution is Future) {
+      _activeExecutions[execKey] = execution;
+      try {
+        await execution;
+      } finally {
+        if (_activeTokens[execKey] == token) {
+          _activeTokens.remove(execKey);
+          final _ = _activeExecutions.remove(execKey);
+        }
       }
+    } else {
+      _activeTokens.remove(execKey);
+      final _ = _activeExecutions.remove(execKey);
     }
   }
 
@@ -230,18 +232,31 @@ class CommandRunner<S, E> {
     }
   }
 
-  Future<void> _runConcurrent(
-      Command<dynamic, S, E> command, CommandIntent intent) async {
+  FutureOr<void> _runConcurrent(
+      Command<dynamic, S, E> command, CommandIntent intent) {
     final token = CancellationToken();
-    await _executeCommand(command, intent, token);
+    return _executeCommand(command, intent, token);
   }
 
-  Future<void> _executeCommand(
+  FutureOr<void> _executeCommand(
     Command<dynamic, S, E> command,
     CommandIntent intent,
     CancellationToken token,
-  ) async {
-    _inFlightTokens.add(token);
+  ) {
+    final hasObserver = Commander.observer != null;
+    final hasInterceptors = _interceptors.isNotEmpty;
+
+    if (hasObserver) {
+      Commander.observer!.onBeforeExecute(_commander, command, intent);
+    }
+    if (hasInterceptors) {
+      for (var i = 0; i < _interceptors.length; i++) {
+        try {
+          _interceptors[i].onBeforeExecute(command, intent);
+        } catch (_) {}
+      }
+    }
+
     final scope = _ControlledCommandScope<S, E>(
       getState: _getState,
       updateState: _updateState,
@@ -249,38 +264,120 @@ class CommandRunner<S, E> {
       cancellationToken: token,
     );
 
-    Commander.observer?.onBeforeExecute(_commander, command, intent);
-    for (final interceptor in _interceptors) {
-      try {
-        interceptor.onBeforeExecute(command, intent);
-      } catch (_) {}
-    }
-
     try {
-      await command.execute(scope, intent);
-    } on CancellationException {
-      // Operation was cancelled collaboratively; expected flow for restart/cancellation.
-    } catch (error, stackTrace) {
-      Commander.observer
-          ?.onError(_commander, command, intent, error, stackTrace);
-      for (final interceptor in _interceptors) {
-        try {
-          interceptor.onError(command, intent, error, stackTrace);
-        } catch (_) {}
-      }
-      if (_onError != null) {
-        _onError!(command, intent, error, stackTrace);
+      final result = command.execute(scope, intent);
+      if (result is Future) {
+        _inFlightTokens.add(token);
+        return result.then(
+          (_) {
+            _inFlightTokens.remove(token);
+            if (hasObserver) {
+              Commander.observer!.onAfterExecute(_commander, command, intent);
+            }
+            if (hasInterceptors) {
+              for (var i = 0; i < _interceptors.length; i++) {
+                try {
+                  _interceptors[i].onAfterExecute(command, intent);
+                } catch (_) {}
+              }
+            }
+          },
+          onError: (Object error, StackTrace stackTrace) {
+            _inFlightTokens.remove(token);
+            if (error is! CancellationException) {
+              _reportError(
+                command,
+                intent,
+                error,
+                stackTrace,
+                hasObserver,
+                hasInterceptors,
+              );
+            }
+            if (hasObserver) {
+              Commander.observer!.onAfterExecute(_commander, command, intent);
+            }
+            if (hasInterceptors) {
+              for (var i = 0; i < _interceptors.length; i++) {
+                try {
+                  _interceptors[i].onAfterExecute(command, intent);
+                } catch (_) {}
+              }
+            }
+          },
+        );
       } else {
-        rethrow;
+        // Synchronous completion
+        if (hasObserver) {
+          Commander.observer!.onAfterExecute(_commander, command, intent);
+        }
+        if (hasInterceptors) {
+          for (var i = 0; i < _interceptors.length; i++) {
+            try {
+              _interceptors[i].onAfterExecute(command, intent);
+            } catch (_) {}
+          }
+        }
+        return null;
       }
-    } finally {
-      _inFlightTokens.remove(token);
-      Commander.observer?.onAfterExecute(_commander, command, intent);
-      for (final interceptor in _interceptors) {
+    } on CancellationException {
+      if (hasObserver) {
+        Commander.observer!.onAfterExecute(_commander, command, intent);
+      }
+      if (hasInterceptors) {
+        for (var i = 0; i < _interceptors.length; i++) {
+          try {
+            _interceptors[i].onAfterExecute(command, intent);
+          } catch (_) {}
+        }
+      }
+      return null;
+    } catch (error, stackTrace) {
+      _reportError(
+        command,
+        intent,
+        error,
+        stackTrace,
+        hasObserver,
+        hasInterceptors,
+      );
+      if (hasObserver) {
+        Commander.observer!.onAfterExecute(_commander, command, intent);
+      }
+      if (hasInterceptors) {
+        for (var i = 0; i < _interceptors.length; i++) {
+          try {
+            _interceptors[i].onAfterExecute(command, intent);
+          } catch (_) {}
+        }
+      }
+      return null;
+    }
+  }
+
+  void _reportError(
+    Command<dynamic, S, E> command,
+    CommandIntent intent,
+    Object error,
+    StackTrace stackTrace,
+    bool hasObserver,
+    bool hasInterceptors,
+  ) {
+    if (hasObserver) {
+      Commander.observer!
+          .onError(_commander, command, intent, error, stackTrace);
+    }
+    if (hasInterceptors) {
+      for (var i = 0; i < _interceptors.length; i++) {
         try {
-          interceptor.onAfterExecute(command, intent);
+          _interceptors[i].onError(command, intent, error, stackTrace);
         } catch (_) {}
       }
+    }
+    if (_onError != null) {
+      _onError!(command, intent, error, stackTrace);
+    } else {
+      Error.throwWithStackTrace(error, stackTrace);
     }
   }
 
@@ -342,7 +439,6 @@ class _ExecutionKey {
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is _ExecutionKey &&
-          runtimeType == other.runtimeType &&
           identical(command, other.command) &&
           key == other.key;
 

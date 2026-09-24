@@ -7,15 +7,17 @@ import '../core/intent.dart';
 
 /// Type-safe container holding registered commands mapped to their intent types.
 class CommandRegistry<S, E> {
-  final Map<Type, _CommandEntry<S, E>> _entries = {};
+  final Map<Type, Command<dynamic, S, E>> _exactEntries = {};
+  final List<_CommandEntry<S, E>> _polymorphicEntries = [];
 
   /// Registers a formal [command] handling [I] intents.
   void register<I extends CommandIntent>(Command<I, S, E> command) {
-    _entries[I] = _CommandEntry<S, E>(
+    _exactEntries[I] = command;
+    _polymorphicEntries.add(_CommandEntry<S, E>(
       intentType: I,
       command: command,
       isCompatible: (intent) => intent is I,
-    );
+    ));
   }
 
   /// Registers an inline handler for quick UI actions without creating a separate class.
@@ -36,16 +38,17 @@ class CommandRegistry<S, E> {
   /// polymorphic inheritance compatibility.
   Command<dynamic, S, E>? find(CommandIntent intent) {
     // 1. O(1) exact match
-    final exact = _entries[intent.runtimeType];
+    final exact = _exactEntries[intent.runtimeType];
     if (exact != null) {
-      return exact.command;
+      return exact;
     }
 
     // 2. Polymorphic match fallback
-    for (final entry in _entries.values) {
+    for (var i = 0; i < _polymorphicEntries.length; i++) {
+      final entry = _polymorphicEntries[i];
       if (entry.isCompatible(intent)) {
         // Cache polymorphic resolution for subsequent O(1) lookups
-        _entries[intent.runtimeType] = entry;
+        _exactEntries[intent.runtimeType] = entry.command;
         return entry.command;
       }
     }
@@ -54,10 +57,13 @@ class CommandRegistry<S, E> {
   }
 
   /// Checks if any command is registered for [I].
-  bool contains<I extends CommandIntent>() => _entries.containsKey(I);
+  bool contains<I extends CommandIntent>() => _exactEntries.containsKey(I);
 
   /// Clears all registered commands.
-  void clear() => _entries.clear();
+  void clear() {
+    _exactEntries.clear();
+    _polymorphicEntries.clear();
+  }
 }
 
 class _CommandEntry<S, E> {
@@ -91,8 +97,8 @@ class _InlineCommand<I extends CommandIntent, S, E> extends Command<I, S, E> {
   Duration? get debounce => _debounce;
 
   @override
-  Future<void> execute(CommandScope<S, E> scope, I intent) async {
-    await _handler(scope, intent);
+  FutureOr<void> execute(CommandScope<S, E> scope, I intent) {
+    return _handler(scope, intent);
   }
 
   @override
