@@ -218,8 +218,8 @@ void main() {
       final childElement =
           tester.element(find.byType(SelectorWidgetWithoutAspectKey));
       final inheritedElement = tester.element(
-        find.byWidgetPredicate(
-            (w) => w.runtimeType.toString().contains('_CommanderInheritedModel')),
+        find.byWidgetPredicate((w) =>
+            w.runtimeType.toString().contains('_CommanderInheritedModel')),
       ) as InheritedModelElement;
 
       // ignore: invalid_use_of_protected_member
@@ -278,7 +278,8 @@ void main() {
       commander.dispose();
     });
 
-    test('3b. Explicitly awaited dispatch continues to propagate error normally',
+    test(
+        '3b. Explicitly awaited dispatch continues to propagate error normally',
         () async {
       final commander = HardeningCommander();
 

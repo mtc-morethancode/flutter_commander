@@ -67,8 +67,7 @@ class SyncCounterCommander extends Commander<CounterState, CounterEffect>
   String get savedStateKey => 'sync_counter';
 
   @override
-  SavedStateStore get savedStateStore =>
-      _customStore ?? super.savedStateStore;
+  SavedStateStore get savedStateStore => _customStore ?? super.savedStateStore;
 
   @override
   Map<String, dynamic> stateToJson(CounterState state) => state.toJson();
@@ -100,8 +99,7 @@ class AsyncCounterCommander extends Commander<CounterState, CounterEffect>
   Duration? get persistDebounce => _debounce;
 
   @override
-  SavedStateStore get savedStateStore =>
-      _customStore ?? super.savedStateStore;
+  SavedStateStore get savedStateStore => _customStore ?? super.savedStateStore;
 
   @override
   Map<String, dynamic> stateToJson(CounterState state) => state.toJson();
@@ -398,7 +396,8 @@ void main() {
       commander.dispose();
     });
 
-    test('restoreState skips notification if restored state equals current', () {
+    test('restoreState skips notification if restored state equals current',
+        () {
       final store = InMemorySavedStateStore();
       store.write('sync_counter', {'count': 0, 'note': ''});
 

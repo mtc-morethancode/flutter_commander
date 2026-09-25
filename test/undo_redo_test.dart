@@ -63,7 +63,8 @@ class BasicUndoRedoCommander extends Commander<CounterState, void>
 
 class LimitedUndoRedoCommander extends Commander<CounterState, void>
     with UndoRedoMixin<CounterState, void> {
-  LimitedUndoRedoCommander({required this.limit}) : super(const CounterState(0)) {
+  LimitedUndoRedoCommander({required this.limit})
+      : super(const CounterState(0)) {
     on<IncrementIntent>((scope, intent) {
       scope.updateState((s) => s.copyWith(count: s.count + intent.amount));
     });
@@ -164,7 +165,9 @@ mixin ExtraFeatureMixin<S, E> on Commander<S, E> {
 }
 
 class MultiMixinCommander extends Commander<CounterState, void>
-    with ExtraFeatureMixin<CounterState, void>, UndoRedoMixin<CounterState, void> {
+    with
+        ExtraFeatureMixin<CounterState, void>,
+        UndoRedoMixin<CounterState, void> {
   MultiMixinCommander() : super(const CounterState(0)) {
     on<IncrementIntent>((scope, intent) {
       scope.updateState((s) => s.copyWith(count: s.count + intent.amount));
@@ -181,7 +184,8 @@ class TestObserver extends CommanderObserver {
     dynamic oldState,
     dynamic newState,
   ) {
-    transitions.add('${(oldState as CounterState).count}->${(newState as CounterState).count}');
+    transitions.add(
+        '${(oldState as CounterState).count}->${(newState as CounterState).count}');
   }
 }
 
@@ -190,7 +194,8 @@ class TestInterceptor extends CommandInterceptor {
 
   @override
   void onStateChanged(dynamic oldState, dynamic newState) {
-    transitions.add('${(oldState as CounterState).count}->${(newState as CounterState).count}');
+    transitions.add(
+        '${(oldState as CounterState).count}->${(newState as CounterState).count}');
   }
 }
 
@@ -211,7 +216,8 @@ void main() {
       expect(commander.state.count, 0);
     });
 
-    test('updates state and populates undo stack while keeping redo empty', () async {
+    test('updates state and populates undo stack while keeping redo empty',
+        () async {
       final commander = BasicUndoRedoCommander();
 
       await commander.dispatch(const IncrementIntent(1));
@@ -250,7 +256,8 @@ void main() {
       expect(commander.canUndo, isFalse);
       expect(commander.canRedo, isTrue);
       expect(commander.undoStack, isEmpty);
-      expect(commander.redoStack, equals([const CounterState(2), const CounterState(1)]));
+      expect(commander.redoStack,
+          equals([const CounterState(2), const CounterState(1)]));
     });
 
     test('redo() restores reverted state and restores undo stack', () async {
@@ -384,7 +391,8 @@ void main() {
       expect(commander.undoHistoryCount, 75);
     });
 
-    test('dynamically setting historyLimit to 0 clears undo stack on redo', () async {
+    test('dynamically setting historyLimit to 0 clears undo stack on redo',
+        () async {
       final commander = DynamicLimitCommander();
       await commander.dispatch(const IncrementIntent(1));
       commander.undo();
@@ -399,7 +407,8 @@ void main() {
   });
 
   group('Selective State Recording (shouldRecordState)', () {
-    test('skips intermediate states that do not satisfy shouldRecordState', () async {
+    test('skips intermediate states that do not satisfy shouldRecordState',
+        () async {
       final commander = FilteredUndoRedoCommander();
 
       // Step 1: count 0 -> 1
@@ -466,7 +475,8 @@ void main() {
   });
 
   group('Lifecycle Hooks', () {
-    test('onUndo, onRedo, and onHistoryCleared callbacks are invoked', () async {
+    test('onUndo, onRedo, and onHistoryCleared callbacks are invoked',
+        () async {
       final commander = HookTrackingCommander();
       await commander.dispatch(const IncrementIntent(1)); // 0 -> 1
       await commander.dispatch(const IncrementIntent(2)); // 1 -> 3
@@ -483,7 +493,8 @@ void main() {
   });
 
   group('Observer & Interceptor Integration', () {
-    test('notifies CommanderObserver and CommandInterceptor on undo and redo', () async {
+    test('notifies CommanderObserver and CommandInterceptor on undo and redo',
+        () async {
       final observer = TestObserver();
       Commander.observer = observer;
 
@@ -509,7 +520,8 @@ void main() {
   });
 
   group('Intent-Driven Undo/Redo Dispatching', () {
-    test('handles UndoIntent, RedoIntent, and ClearHistoryIntent automatically', () async {
+    test('handles UndoIntent, RedoIntent, and ClearHistoryIntent automatically',
+        () async {
       final commander = BasicUndoRedoCommander();
       await commander.dispatch(const IncrementIntent(1));
       await commander.dispatch(const IncrementIntent(2));
@@ -532,7 +544,9 @@ void main() {
       expect(commander.canRedo, isFalse);
     });
 
-    test('autoRegisterUndoRedoIntents = false does not register intent handlers', () async {
+    test(
+        'autoRegisterUndoRedoIntents = false does not register intent handlers',
+        () async {
       final commander = NoAutoIntentCommander();
       await commander.dispatch(const IncrementIntent(1));
 
@@ -579,7 +593,8 @@ void main() {
   });
 
   group('Multiple Mixin Composition & External Restoration', () {
-    test('composes freely with other mixins without diamond inheritance', () async {
+    test('composes freely with other mixins without diamond inheritance',
+        () async {
       final commander = MultiMixinCommander();
       expect(commander.extraFeatureInitialized, isTrue);
 
@@ -603,7 +618,8 @@ void main() {
   });
 
   group('Disposal & Safety Guards', () {
-    test('calling undo or redo after dispose does not throw or mutate', () async {
+    test('calling undo or redo after dispose does not throw or mutate',
+        () async {
       final commander = BasicUndoRedoCommander();
       await commander.dispatch(const IncrementIntent(1));
       commander.dispose();
@@ -617,7 +633,9 @@ void main() {
   });
 
   group('Flutter Widgets Integration (UI & Context Dispatch)', () {
-    testWidgets('CommanderBuilder reactively updates canUndo and canRedo buttons', (tester) async {
+    testWidgets(
+        'CommanderBuilder reactively updates canUndo and canRedo buttons',
+        (tester) async {
       final commander = BasicUndoRedoCommander();
 
       await tester.pumpWidget(
@@ -625,7 +643,8 @@ void main() {
           home: CommanderScope<BasicUndoRedoCommander>.value(
             value: commander,
             child: Scaffold(
-              body: CommanderBuilder<BasicUndoRedoCommander, CounterState, CounterState>(
+              body: CommanderBuilder<BasicUndoRedoCommander, CounterState,
+                  CounterState>(
                 builder: (context, state) {
                   final cmd = context.commander<BasicUndoRedoCommander>();
                   return Column(
@@ -652,32 +671,66 @@ void main() {
 
       // Initially Count: 0, Undo disabled, Redo disabled
       expect(find.text('Count: 0'), findsOneWidget);
-      expect(tester.widget<ElevatedButton>(find.byKey(const Key('btn-undo'))).enabled, isFalse);
-      expect(tester.widget<ElevatedButton>(find.byKey(const Key('btn-redo'))).enabled, isFalse);
+      expect(
+          tester
+              .widget<ElevatedButton>(find.byKey(const Key('btn-undo')))
+              .enabled,
+          isFalse);
+      expect(
+          tester
+              .widget<ElevatedButton>(find.byKey(const Key('btn-redo')))
+              .enabled,
+          isFalse);
 
       // Update state
       await commander.dispatch(const IncrementIntent(5));
       await tester.pump();
       expect(find.text('Count: 5'), findsOneWidget);
-      expect(tester.widget<ElevatedButton>(find.byKey(const Key('btn-undo'))).enabled, isTrue);
-      expect(tester.widget<ElevatedButton>(find.byKey(const Key('btn-redo'))).enabled, isFalse);
+      expect(
+          tester
+              .widget<ElevatedButton>(find.byKey(const Key('btn-undo')))
+              .enabled,
+          isTrue);
+      expect(
+          tester
+              .widget<ElevatedButton>(find.byKey(const Key('btn-redo')))
+              .enabled,
+          isFalse);
 
       // Tap Undo button
       await tester.tap(find.byKey(const Key('btn-undo')));
       await tester.pump();
       expect(find.text('Count: 0'), findsOneWidget);
-      expect(tester.widget<ElevatedButton>(find.byKey(const Key('btn-undo'))).enabled, isFalse);
-      expect(tester.widget<ElevatedButton>(find.byKey(const Key('btn-redo'))).enabled, isTrue);
+      expect(
+          tester
+              .widget<ElevatedButton>(find.byKey(const Key('btn-undo')))
+              .enabled,
+          isFalse);
+      expect(
+          tester
+              .widget<ElevatedButton>(find.byKey(const Key('btn-redo')))
+              .enabled,
+          isTrue);
 
       // Tap Redo button
       await tester.tap(find.byKey(const Key('btn-redo')));
       await tester.pump();
       expect(find.text('Count: 5'), findsOneWidget);
-      expect(tester.widget<ElevatedButton>(find.byKey(const Key('btn-undo'))).enabled, isTrue);
-      expect(tester.widget<ElevatedButton>(find.byKey(const Key('btn-redo'))).enabled, isFalse);
+      expect(
+          tester
+              .widget<ElevatedButton>(find.byKey(const Key('btn-undo')))
+              .enabled,
+          isTrue);
+      expect(
+          tester
+              .widget<ElevatedButton>(find.byKey(const Key('btn-redo')))
+              .enabled,
+          isFalse);
     });
 
-    testWidgets('context.dispatch dispatches UndoIntent from deeply nested widgets', (tester) async {
+    testWidgets(
+        'context.dispatch dispatches UndoIntent from deeply nested widgets',
+        (tester) async {
       final commander = BasicUndoRedoCommander();
       await commander.dispatch(const IncrementIntent(42));
 
@@ -691,7 +744,8 @@ void main() {
                   return ElevatedButton(
                     key: const Key('btn-dispatch-undo'),
                     onPressed: () {
-                      context.dispatch<BasicUndoRedoCommander>(const UndoIntent());
+                      context
+                          .dispatch<BasicUndoRedoCommander>(const UndoIntent());
                     },
                     child: const Text('Dispatch Undo'),
                   );

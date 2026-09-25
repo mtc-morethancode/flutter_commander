@@ -724,10 +724,10 @@ context.dispatch<CanvasCommander>(const ClearHistoryIntent());
 
 Whether you are evaluating architectural options for a new project or migrating an existing app, explore our dedicated guides:
 
-* ⚖️ [**Detailed Architectural Comparison**](docs/comparison.md): An objective side-by-side matrix comparing `flutter_commander` with BLoC and Riverpod.
-* 📦 [**Migrating from BLoC**](docs/migration_from_bloc.md): Step-by-step migration guide with AI prompts and side-by-side examples.
-* 🌊 [**Migrating from Riverpod**](docs/migration_from_riverpod.md): Step-by-step migration guide from Riverpod providers to Commander.
-* 📖 [**Universal Migration Guide**](docs/migration_guide.md): Universal MVI core principles and transition overview.
+* ⚖️ [**Detailed Architectural Comparison**](doc/comparison.md): An objective side-by-side matrix comparing `flutter_commander` with BLoC and Riverpod.
+* 📦 [**Migrating from BLoC**](doc/migration_from_bloc.md): Step-by-step migration guide with AI prompts and side-by-side examples.
+* 🌊 [**Migrating from Riverpod**](doc/migration_from_riverpod.md): Step-by-step migration guide from Riverpod providers to Commander.
+* 📖 [**Universal Migration Guide**](doc/migration_guide.md): Universal MVI core principles and transition overview.
 
 ---
 

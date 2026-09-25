@@ -243,7 +243,8 @@ void main() {
       expect(combined.cancellationReason, equals('t2 stopped'));
     });
 
-    test('combine factory cancels immediately if any input token is already cancelled',
+    test(
+        'combine factory cancels immediately if any input token is already cancelled',
         () {
       final t1 = CancellationToken();
       final t2 = CancellationToken()..cancel('Already stopped');

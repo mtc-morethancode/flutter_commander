@@ -33,10 +33,10 @@ class SavedStateHandle {
     required this.key,
     SavedStateStore? store,
     Map<String, dynamic>? initialData,
-  })  : store = store ??
-            SavedStateStore.defaultStore ??
-            InMemorySavedStateStore(),
-        _data = initialData != null ? Map<String, dynamic>.from(initialData) : {} {
+  })  : store =
+            store ?? SavedStateStore.defaultStore ?? InMemorySavedStateStore(),
+        _data =
+            initialData != null ? Map<String, dynamic>.from(initialData) : {} {
     restoreSync();
   }
 
@@ -100,11 +100,13 @@ class SavedStateHandle {
       final result = store.write(key, Map<String, dynamic>.from(_data));
       if (result is Future) {
         unawaited(result.catchError((Object e) {
-          debugPrint('[flutter_commander] [SavedStateHandle] write error on $key: $e');
+          debugPrint(
+              '[flutter_commander] [SavedStateHandle] write error on $key: $e');
         }));
       }
     } catch (e) {
-      debugPrint('[flutter_commander] [SavedStateHandle] write error on $key: $e');
+      debugPrint(
+          '[flutter_commander] [SavedStateHandle] write error on $key: $e');
     }
   }
 

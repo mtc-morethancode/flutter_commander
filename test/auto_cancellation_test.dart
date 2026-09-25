@@ -95,7 +95,8 @@ class SearchCommander extends Commander<SearchState, SearchEffect> {
     // 1. Restartable search command using scope.race
     on<SearchIntent>(
       (scope, intent) async {
-        scope.updateState((s) => s.copyWith(isLoading: true, query: intent.query));
+        scope.updateState(
+            (s) => s.copyWith(isLoading: true, query: intent.query));
 
         // Register custom resource cleanup
         final detach = scope.attach(() {
@@ -105,8 +106,10 @@ class SearchCommander extends Commander<SearchState, SearchEffect> {
         final results = await scope.race(api.search(intent.query));
         detach();
 
-        scope.updateState((s) => s.copyWith(isLoading: false, results: results));
-        scope.emitSideEffect(SearchEffect('Found ${results.length} for ${intent.query}'));
+        scope
+            .updateState((s) => s.copyWith(isLoading: false, results: results));
+        scope.emitSideEffect(
+            SearchEffect('Found ${results.length} for ${intent.query}'));
       },
       policy: ExecutionPolicy.restart,
     );
@@ -152,7 +155,8 @@ class SearchCommander extends Commander<SearchState, SearchEffect> {
 
 void main() {
   group('Auto-Cancellation Integration Tests', () {
-    test('ExecutionPolicy.restart auto-aborts previous in-flight task via scope.race',
+    test(
+        'ExecutionPolicy.restart auto-aborts previous in-flight task via scope.race',
         () async {
       final api = MockSearchApi();
       final commander = SearchCommander(api: api);
@@ -197,7 +201,8 @@ void main() {
       commander.dispose();
     });
 
-    test('commander.dispose() auto-cancels in-flight scope.sleep timers immediately',
+    test(
+        'commander.dispose() auto-cancels in-flight scope.sleep timers immediately',
         () async {
       final api = MockSearchApi();
       final commander = SearchCommander(api: api);
@@ -254,7 +259,8 @@ void main() {
       await streamController.close();
     });
 
-    test('TestCommandScope supports unit testing cancellation helpers in isolation',
+    test(
+        'TestCommandScope supports unit testing cancellation helpers in isolation',
         () async {
       final scope = TestCommandScope<SearchState, SearchEffect>(
         SearchState.initial(),

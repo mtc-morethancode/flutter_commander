@@ -89,7 +89,8 @@ class TestCommander extends Commander<TestState, TestEffect> {
 // Sample CommanderView subclass for testing
 class CounterPageView
     extends CommanderView<TestCommander, TestState, TestEffect> {
-  final void Function(BuildContext context, TestEffect effect)? onEffectCallback;
+  final void Function(BuildContext context, TestEffect effect)?
+      onEffectCallback;
   final bool Function(TestEffect effect)? listenWhenCallback;
   final bool Function(TestState previous, TestState current)?
       shouldRebuildCallback;

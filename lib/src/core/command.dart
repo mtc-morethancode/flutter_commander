@@ -68,6 +68,6 @@ abstract class Command<I extends CommandIntent, S, E> {
 
   /// Executes the command logic with the provided [scope] and triggering [intent].
   ///
-  /// Can return [Future<void>] for asynchronous commands or [void] for synchronous actions.
+  /// Can return `Future<void>` for asynchronous commands or `void` for synchronous actions.
   FutureOr<void> execute(CommandScope<S, E> scope, I intent);
 }

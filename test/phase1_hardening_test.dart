@@ -180,7 +180,8 @@ void main() {
         () async {
       final store = DelayedAsyncStore(const Duration(milliseconds: 30));
       // Pre-populate disk with count = 100
-      await store.write('default_conflict_key', {'count': 100, 'note': 'saved'});
+      await store
+          .write('default_conflict_key', {'count': 100, 'note': 'saved'});
 
       // Create commander (starts at 0, schedules async read of 100)
       final commander = DefaultConflictCommander(store);
@@ -261,7 +262,8 @@ void main() {
       await commander.dispatch(const EmitEffectIntent('Effect 2 (Covered)'));
       await tester.pump();
       expect(effectsLog, equals(['ScreenA: Effect 1']),
-          reason: 'Covered Screen A must not receive side effects while inactive.');
+          reason:
+              'Covered Screen A must not receive side effects while inactive.');
 
       // Pop Screen B to return to Screen A
       tester.state<NavigatorState>(find.byType(Navigator)).pop();

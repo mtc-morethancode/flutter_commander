@@ -232,7 +232,6 @@ void main() {
       commander.dispose();
     });
 
-
     testWidgets(
         'CommanderStateBuilder renders full state with only 2 generic types',
         (tester) async {
@@ -297,7 +296,6 @@ void main() {
 
       commander.dispose();
     });
-
 
     testWidgets(
         'CommanderBuilder correctly unsubscribes when commander changes from inherited to explicit',
