@@ -67,6 +67,13 @@ abstract class CommanderView<C extends Commander<S, E>, S, E>
   /// Defaults to returning `true` for all effects.
   bool listenWhen(E effect) => true;
 
+  /// Whether to receive side-effects via [onEffect] only when this view's enclosing route
+  /// is the top-most, active route in the [Navigator].
+  ///
+  /// Defaults to `true` to prevent covered screens in the backstack from firing
+  /// ghost notifications or conflicting navigations.
+  bool get listenOnlyWhenActive => true;
+
   /// Optional condition to control whether this view should rebuild when the commander's state changes.
   ///
   /// Defaults to checking value inequality (`previous != current`).
@@ -168,6 +175,12 @@ class _CommanderViewState<C extends Commander<S, E>, S, E>
 
   void _onEffect(E effect) {
     if (!mounted || !context.mounted) return;
+    if (widget.listenOnlyWhenActive) {
+      final route = ModalRoute.of(context);
+      if (route != null && !route.isCurrent) {
+        return;
+      }
+    }
     if (widget.listenWhen(effect)) {
       widget.onEffect(context, effect);
     }

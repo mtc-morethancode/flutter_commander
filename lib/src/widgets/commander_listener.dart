@@ -35,6 +35,13 @@ class CommanderListener<C extends Commander<dynamic, E>, E>
   /// Optional filter to condition which effects trigger [onEffect].
   final bool Function(E effect)? listenWhen;
 
+  /// Whether to receive side-effects only when this widget's enclosing route is the current/active
+  /// top-most route in the [Navigator].
+  ///
+  /// Defaults to `true` to prevent inactive or covered screens in the navigation stack
+  /// from triggering unintended SnackBars, dialogs, or duplicate navigations.
+  final bool listenOnlyWhenActive;
+
   /// Child widget.
   final Widget child;
 
@@ -44,6 +51,7 @@ class CommanderListener<C extends Commander<dynamic, E>, E>
     this.commander,
     required this.onEffect,
     this.listenWhen,
+    this.listenOnlyWhenActive = true,
     required this.child,
   });
 
@@ -86,6 +94,12 @@ class _CommanderListenerState<C extends Commander<dynamic, E>, E>
 
     _subscription = _commander!.effects.listen((effect) {
       if (!mounted || !context.mounted) return;
+      if (widget.listenOnlyWhenActive) {
+        final route = ModalRoute.of(context);
+        if (route != null && !route.isCurrent) {
+          return;
+        }
+      }
       if (widget.listenWhen != null && !widget.listenWhen!(effect)) {
         return;
       }
