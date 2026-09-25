@@ -58,6 +58,7 @@ abstract class CommanderView<C extends Commander<S, E>, S, E>
   /// Callback executed whenever a one-shot side [effect] is emitted by the [Commander].
   ///
   /// This execution is purely imperative and does NOT trigger a widget rebuild.
+  /// It is guaranteed to only be invoked when the widget is actively mounted in the tree (`mounted == true`).
   void onEffect(BuildContext context, E effect) {}
 
   /// Optional filter to condition which effects trigger [onEffect].
@@ -142,7 +143,7 @@ class _CommanderViewState<C extends Commander<S, E>, S, E>
   }
 
   void _onEffect(E effect) {
-    if (!mounted) return;
+    if (!mounted || !context.mounted) return;
     if (widget.listenWhen(effect)) {
       widget.onEffect(context, effect);
     }
