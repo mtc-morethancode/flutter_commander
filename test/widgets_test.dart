@@ -232,38 +232,6 @@ void main() {
       commander.dispose();
     });
 
-    testWidgets('CommanderConsumer combines builder and listener seamlessly',
-        (tester) async {
-      final commander = AppCommander();
-      final receivedEffects = <String>[];
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: CommanderScope<AppCommander>.value(
-            value: commander,
-            child: CommanderConsumer<AppCommander, AppState, AppEffect, int>(
-              select: (state) => state.count,
-              onEffect: (context, effect) {
-                receivedEffects.add(effect.snackbarText);
-              },
-              builder: (context, count) => Text('Consumer Count: $count'),
-            ),
-          ),
-        ),
-      );
-
-      expect(find.text('Consumer Count: 0'), findsOneWidget);
-
-      await commander.dispatch(const NotifyEffectIntent('Toast'));
-      await tester.pump();
-      expect(receivedEffects, equals(['Toast']));
-
-      await commander.dispatch(const IncIntent());
-      await tester.pump();
-      expect(find.text('Consumer Count: 1'), findsOneWidget);
-
-      commander.dispose();
-    });
 
     testWidgets(
         'CommanderStateBuilder renders full state with only 2 generic types',
@@ -330,39 +298,6 @@ void main() {
       commander.dispose();
     });
 
-    testWidgets(
-        'CommanderStateConsumer combines listener and full-state builder with 3 generics',
-        (tester) async {
-      final commander = AppCommander();
-      final List<String> receivedEffects = [];
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: CommanderScope<AppCommander>.value(
-            value: commander,
-            child: CommanderStateConsumer<AppCommander, AppState, AppEffect>(
-              onEffect: (context, effect) {
-                receivedEffects.add(effect.snackbarText);
-              },
-              builder: (context, state) =>
-                  Text('StateConsumer: ${state.count}'),
-            ),
-          ),
-        ),
-      );
-
-      expect(find.text('StateConsumer: 0'), findsOneWidget);
-
-      await commander.dispatch(const NotifyEffectIntent('StateConsumer Toast'));
-      await tester.pump();
-      expect(receivedEffects, equals(['StateConsumer Toast']));
-
-      await commander.dispatch(const IncIntent());
-      await tester.pump();
-      expect(find.text('StateConsumer: 1'), findsOneWidget);
-
-      commander.dispose();
-    });
 
     testWidgets(
         'CommanderBuilder correctly unsubscribes when commander changes from inherited to explicit',

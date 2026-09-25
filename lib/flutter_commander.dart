@@ -17,13 +17,11 @@ export 'src/commander/commander.dart';
 
 // Widgets
 export 'src/widgets/commander_builder.dart';
-export 'src/widgets/commander_consumer.dart';
 export 'src/widgets/commander_extensions.dart';
 export 'src/widgets/commander_listener.dart';
 export 'src/widgets/commander_scope.dart';
 export 'src/widgets/commander_selector.dart';
 export 'src/widgets/commander_state_builder.dart';
-export 'src/widgets/commander_state_consumer.dart';
 export 'src/widgets/commander_view.dart';
 
 // Testing
