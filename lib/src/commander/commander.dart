@@ -97,8 +97,8 @@ abstract class Commander<S, E>
 
   /// Lifecycle hook called immediately upon commander construction.
   ///
-  /// Can be overridden by subclasses or mixins (such as `SavedStateMixin`)
-  /// to perform initial setups or schedule asynchronous tasks.
+  /// Can be overridden by subclasses or mixins (such as `SavedStateMixin` or `UndoRedoMixin`)
+  /// to perform initial setups, intent registrations, or schedule asynchronous tasks.
   @protected
   @mustCallSuper
   void onInit() {}

@@ -31,3 +31,7 @@ export 'src/testing/test_command_scope.dart';
 export 'src/saved_state/saved_state_handle.dart';
 export 'src/saved_state/saved_state_mixin.dart';
 export 'src/saved_state/saved_state_store.dart';
+
+// Undo / Redo
+export 'src/undo_redo/undo_redo_intents.dart';
+export 'src/undo_redo/undo_redo_mixin.dart';
