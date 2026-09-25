@@ -465,7 +465,89 @@ class CartBadge extends StatelessWidget {
 
 ---
 
-### 5. Atomic Unit Testing with `TestCommandScope`
+### 5. Native State Persistence (`SavedStateMixin` & `SavedStateStore`)
+
+Inspired by native mobile state preservation (Android Jetpack's `SavedStateHandle` and Flutter's `StateRestoration`), `flutter_commander` provides seamless state persistence without coupling to any specific database (Hive, SharedPreferences, Isar, SQLite, or SecureStorage).
+
+#### A. Agnostic Storage Contract (`SavedStateStore`)
+
+Implement the minimal 3-method interface or use the built-in `InMemorySavedStateStore`:
+
+```dart
+// Example: Plug in Hive in ~15 lines without extra commander plugins
+class HiveSavedStateStore implements SavedStateStore {
+  final Box<dynamic> _box;
+  HiveSavedStateStore(this._box);
+
+  @override
+  Map<String, dynamic>? read(String key) {
+    final data = _box.get(key);
+    return data != null ? Map<String, dynamic>.from(data as Map) : null;
+  }
+
+  @override
+  Future<void> write(String key, Map<String, dynamic> data) async {
+    await _box.put(key, data);
+  }
+
+  @override
+  Future<void> delete(String key) async {
+    await _box.delete(key);
+  }
+}
+```
+
+#### B. Setup Global Store in `main()`
+
+```dart
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Hive.initFlutter();
+  final box = await Hive.openBox('commander_storage');
+
+  // Configure global default store:
+  SavedStateStore.defaultStore = HiveSavedStateStore(box);
+
+  runApp(const MyApp());
+}
+```
+
+#### C. Automatic Persistence with `SavedStateMixin`
+
+Simply mix `SavedStateMixin` onto your `Commander`. It automatically saves on every state change and restores state on startup:
+
+```dart
+class CartCommander extends Commander<CartState, CartEffect>
+    with SavedStateMixin<CartState, CartEffect> {
+  CartCommander() : super(const CartState()) {
+    // 1. Zero-Flicker Synchronous Restoration:
+    // Because Hive pre-warms boxes in RAM, state restores synchronously with 0 frame flicker!
+    restoreStateSync();
+  }
+
+  @override
+  String get savedStateKey => 'cart_state';
+
+  @override
+  Map<String, dynamic> stateToJson(CartState state) => state.toJson();
+
+  @override
+  CartState stateFromJson(Map<String, dynamic> json) => CartState.fromJson(json);
+
+  // 2. Optional: Throttle rapid state updates to save battery and disk I/O
+  @override
+  Duration? get persistDebounce => const Duration(milliseconds: 100);
+}
+```
+
+* **Zero-Flicker Startup**: `restoreStateSync()` restores the state during construction, eliminating flash-of-initial-content.
+* **Background Async Fallback**: If using asynchronous disk engines (like `FlutterSecureStorage`), state restores in the background via `await commander.savedStateReady;`.
+* **State Clearing**: Call `await commander.clearSavedState();` on user logout or session reset.
+* **Granular Key-Value Handle**: For persisting individual fields independently, use `SavedStateHandle(key: 'user_draft')`.
+
+---
+
+### 6. Atomic Unit Testing with `TestCommandScope`
 
 Unit testing in `flutter_commander` is deterministic, requires **zero widget pumping, zero streams, and zero timers**:
 
@@ -497,7 +579,7 @@ test('CheckoutCommand processes payment, clears cart and emits confirmation', ()
 
 ---
 
-### 6. Observability & Global Telemetry
+### 7. Observability & Global Telemetry
 
 Monitor lifecycle events, executions, and crash reports across the entire app by registering a `CommanderObserver` in your `main()`:
 
@@ -546,13 +628,14 @@ class AppStoreObserver extends CommanderObserver {
 
 ---
 
-### 7. Architectural Comparison
+### 8. Architectural Comparison
 
 | Feature | flutter_commander | BLoC | Riverpod |
 | :--- | :---: | :---: | :---: |
 | **Concurrency Control** | Declarative (`DROP`, `RESTART`, `QUEUE`, `CONCURRENT`) | Requires custom RxDart transformers | Manual cancel tokens |
 | **Separation of Concerns** | Single-responsibility `Command` classes | Centralized Bloc with multiple event handlers | Notifiers with multiple methods |
 | **One-Shot Effects Channel** | First-class `SideEffect` broadcast stream | State flags or external stream adapters | State flags or external streams |
+| **State Persistence** | Agnostic `SavedStateMixin` & `SavedStateStore` (0-flicker sync/async restoration) | Coupled to `hydrated_bloc` (forced inheritance) | Not built-in / manual notifier state serialization |
 | **Code Generation** | ❌ None (Pure Dart 3) | ❌ Optional | ⚠️ Recommended |
 | **Business Logic Testing** | Atomic & synchronous via `TestCommandScope` | `blocTest` (async with stream delays) | `ProviderContainer` mocking |
 
