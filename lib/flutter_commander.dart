@@ -26,3 +26,8 @@ export 'src/widgets/commander_view.dart';
 
 // Testing
 export 'src/testing/test_command_scope.dart';
+
+// Saved State & Persistence
+export 'src/saved_state/saved_state_handle.dart';
+export 'src/saved_state/saved_state_mixin.dart';
+export 'src/saved_state/saved_state_store.dart';
