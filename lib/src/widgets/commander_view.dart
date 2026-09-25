@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
 import '../commander/commander.dart';
@@ -121,19 +122,34 @@ class _CommanderViewState<C extends Commander<S, E>, S, E>
     }
   }
 
+  void _safeSetState(VoidCallback fn) {
+    if (!mounted) return;
+    final phase = SchedulerBinding.instance.schedulerPhase;
+    if (phase == SchedulerPhase.persistentCallbacks) {
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(fn);
+        }
+      });
+    } else {
+      setState(fn);
+    }
+  }
+
   void _subscribe() {
     final commander =
         widget.commander ?? CommanderScope.dependOnCommander<C>(context);
     if (_commander == commander) return;
 
+    final isInitial = _commander == null;
     _unsubscribe();
     _commander = commander;
     _currentState = commander.state;
 
     commander.addListener(_onStateChanged);
     _effectSubscription = commander.effects.listen(_onEffect);
-    if (mounted) {
-      setState(() {});
+    if (!isInitial && mounted) {
+      _safeSetState(() {});
     }
   }
 
@@ -146,7 +162,7 @@ class _CommanderViewState<C extends Commander<S, E>, S, E>
     _currentState = newState;
 
     if (shouldRebuild && mounted) {
-      setState(() {});
+      _safeSetState(() {});
     }
   }
 

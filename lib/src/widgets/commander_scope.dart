@@ -1,3 +1,6 @@
+import 'dart:collection';
+
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
 import '../commander/commander.dart';
@@ -145,8 +148,22 @@ class _CommanderScopeState<C extends Commander<dynamic, dynamic>>
     }
   }
 
+  void _safeSetState(VoidCallback fn) {
+    if (!mounted) return;
+    final phase = SchedulerBinding.instance.schedulerPhase;
+    if (phase == SchedulerPhase.persistentCallbacks) {
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(fn);
+        }
+      });
+    } else {
+      setState(fn);
+    }
+  }
+
   void _onStateChanged() {
-    setState(() {});
+    _safeSetState(() {});
   }
 
   @override
@@ -181,6 +198,10 @@ class _CommanderInheritedModel<C extends Commander<dynamic, dynamic>>
   });
 
   @override
+  InheritedModelElement<_Aspect> createElement() =>
+      _CommanderInheritedModelElement<C>(this);
+
+  @override
   bool updateShouldNotify(_CommanderInheritedModel<C> oldWidget) {
     return !identical(state, oldWidget.state) && state != oldWidget.state;
   }
@@ -205,6 +226,47 @@ class _CommanderInheritedModel<C extends Commander<dynamic, dynamic>>
     }
 
     return false;
+  }
+}
+
+class _CommanderInheritedModelElement<C extends Commander<dynamic, dynamic>>
+    extends InheritedModelElement<_Aspect> {
+  _CommanderInheritedModelElement(_CommanderInheritedModel<C> super.widget);
+
+  final Map<Element, Set<_Aspect>> _managedDependencies = {};
+
+  @override
+  void updateDependencies(Element dependent, Object? aspect) {
+    final Set<Object?>? existing = getDependencies(dependent) as Set<Object?>?;
+    if (existing != null && existing.isEmpty) {
+      return;
+    }
+
+    if (aspect == null) {
+      _managedDependencies.remove(dependent);
+      setDependencies(dependent, HashSet<_Aspect>());
+      return;
+    }
+
+    assert(aspect is _Aspect);
+    final managed = _managedDependencies.putIfAbsent(dependent, () {
+      final set = <_Aspect>{};
+      setDependencies(dependent, set);
+      return set;
+    });
+
+    if (aspect is _Aspect) {
+      // Replace existing equivalent aspect so the function closure is refreshed
+      // without accumulating duplicate aspects in memory across widget rebuilds.
+      managed.remove(aspect);
+      managed.add(aspect);
+    }
+  }
+
+  @override
+  void removeDependent(Element dependent) {
+    _managedDependencies.remove(dependent);
+    super.removeDependent(dependent);
   }
 }
 
@@ -240,10 +302,15 @@ class _SelectorAspect<S, R> implements _Aspect {
     if (aspectKey != null && other.aspectKey != null) {
       return aspectKey == other.aspectKey;
     }
-    return identical(selector, other.selector);
+    // If aspectKey is null on both, compare equality based on state type S and slice type R.
+    // This allows stable aspect caching across builds without leaking closures in memory.
+    if (aspectKey == null && other.aspectKey == null) {
+      return true;
+    }
+    return false;
   }
 
   @override
   int get hashCode =>
-      aspectKey != null ? aspectKey.hashCode : identityHashCode(selector);
+      aspectKey != null ? aspectKey.hashCode : Object.hash(S, R);
 }
