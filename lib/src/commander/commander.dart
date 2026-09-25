@@ -91,7 +91,17 @@ abstract class Commander<S, E>
         onError(error, stackTrace, intent);
       },
     );
+
+    onInit();
   }
+
+  /// Lifecycle hook called immediately upon commander construction.
+  ///
+  /// Can be overridden by subclasses or mixins (such as `SavedStateMixin`)
+  /// to perform initial setups or schedule asynchronous tasks.
+  @protected
+  @mustCallSuper
+  void onInit() {}
 
   void _flushPendingEffects() {
     if (_unhandledEffectsBuffer.isEmpty) return;
@@ -250,6 +260,50 @@ abstract class Commander<S, E>
       }
     }
 
+    onStateChanged(oldState, newState);
+
+    notifyListeners();
+  }
+
+  /// Lifecycle hook called after state transitions from [oldState] to [newState].
+  ///
+  /// Subclasses and mixins can override this hook to react to state updates
+  /// (such as automatic state persistence or undo/redo history tracking).
+  @protected
+  @mustCallSuper
+  void onStateChanged(S oldState, S newState) {}
+
+  /// Lifecycle hook called when state is restored from persistence or history.
+  @protected
+  @mustCallSuper
+  void onStateRestored(S oldState, S newState) {}
+
+  /// Restores or overrides the state directly (e.g. from `SavedStateMixin` or undo/redo).
+  ///
+  /// If [restoredState] equals the current state, listeners are not notified.
+  @protected
+  void restoreState(S restoredState) {
+    if (_isDisposed) return;
+
+    final oldState = _state;
+    if (identical(oldState, restoredState) || oldState == restoredState) {
+      return;
+    }
+
+    _state = restoredState;
+
+    if (Commander.observer != null) {
+      Commander.observer!.onStateChanged(this, oldState, restoredState);
+    }
+    if (_interceptors.isNotEmpty) {
+      for (var i = 0; i < _interceptors.length; i++) {
+        try {
+          _interceptors[i].onStateChanged(oldState, restoredState);
+        } catch (_) {}
+      }
+    }
+
+    onStateRestored(oldState, restoredState);
     notifyListeners();
   }
 
