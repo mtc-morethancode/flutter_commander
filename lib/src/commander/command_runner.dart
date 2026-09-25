@@ -494,6 +494,9 @@ class _ControlledCommandScope<S, E> implements CommandScope<S, E> {
   bool get isCancelled => cancellationToken.isCancelled;
 
   @override
+  void throwIfCancelled() => cancellationToken.throwIfCancelled();
+
+  @override
   void updateState(S Function(S current) reducer) {
     // Prevent stale or cancelled commands from mutating state
     if (cancellationToken.isCancelled) return;
@@ -506,4 +509,76 @@ class _ControlledCommandScope<S, E> implements CommandScope<S, E> {
     if (cancellationToken.isCancelled) return;
     _emitSideEffect(effect);
   }
+
+  @override
+  Future<T> race<T>(Future<T> future) => cancellationToken.race<T>(future);
+
+  @override
+  Future<T> withCancellation<T>(Future<T> future) =>
+      cancellationToken.race<T>(future);
+
+  @override
+  Future<T> runCancellable<T>(FutureOr<T> Function() operation) =>
+      cancellationToken.runCancellable<T>(operation);
+
+  @override
+  Future<void> sleep(Duration duration) => cancellationToken.sleep(duration);
+
+  @override
+  void Function() attach(void Function() onCancel) =>
+      cancellationToken.attach(onCancel);
+
+  @override
+  StreamSubscription<T> listen<T>(
+    Stream<T> stream, {
+    void Function(T data)? onData,
+    Function? onError,
+    void Function()? onDone,
+    bool? cancelOnError,
+  }) {
+    final subscription = stream.listen(
+      (data) {
+        if (!cancellationToken.isCancelled && onData != null) {
+          onData(data);
+        }
+      },
+      onError: (Object error, StackTrace stackTrace) {
+        if (!cancellationToken.isCancelled && onError != null) {
+          if (onError is void Function(Object, StackTrace)) {
+            onError(error, stackTrace);
+          } else if (onError is void Function(Object)) {
+            onError(error);
+          } else {
+            onError(error, stackTrace);
+          }
+        }
+      },
+      onDone: () {
+        if (!cancellationToken.isCancelled && onDone != null) {
+          onDone();
+        }
+      },
+      cancelOnError: cancelOnError,
+    );
+
+    cancellationToken.attach(() {
+      unawaited(subscription.cancel());
+    });
+
+    return subscription;
+  }
+
+  @override
+  Future<void> forEach<T>(
+    Stream<T> stream, {
+    required void Function(T data) onData,
+    Function? onError,
+    bool? cancelOnError,
+  }) =>
+      cancellationToken.forEach<T>(
+        stream,
+        onData: onData,
+        onError: onError,
+        cancelOnError: cancelOnError,
+      );
 }
