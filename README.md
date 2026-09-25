@@ -336,24 +336,26 @@ class CartCommander extends Commander<CartState, CartEffect> {
 
 | Widget / Extension | Purpose | Generics | Rebuilds On |
 | :--- | :--- | :---: | :--- |
-| `CommanderView<C, S, E>` | **Recommended for screens**: Combines state reactivity, side-effects, and intent dispatch with zero nested builders | 3 (`C, S, E`) | State mutation (or via `shouldRebuild`) |
-| `CommanderStateBuilder<C, S>` | Rebuild when full state updates | 2 (`C, S`) | Any state mutation |
-| `CommanderSelector<C, S, R>` | Rebuild **only** when projected slice `R` changes | 3 (`C, S, R`) | Value equality (`==`) of `R` |
-| `CommanderListener<C, E>` | Execute one-shot side effects (navigation, dialogs, toasts) | 2 (`C, E`) | Never (side-effects stream only) |
-| `CommanderStateConsumer<C, S, E>` | Combine full-state builder + side-effect listener | 3 (`C, S, E`) | Any state mutation |
-| `CommanderConsumer<C, S, R, E>` | Combine slice selector + side-effect listener | 4 (`C, S, R, E`) | Value equality (`==`) of `R` |
-| `context.select<C, S, R>(select)` | Read slice reactively directly inside `build()` | 3 (`C, S, R`) | Value equality (`==`) of `R` |
+| `CommanderScope<C>` | Provide and manage the lifecycle of a `Commander` in the widget tree | 1 (`C`) | Commander instance swap |
+| `CommanderView<C, S, E>` | **Recommended for screens & features**: Combines state reactivity, side-effects, intent dispatch, and rebuild filtering with zero nested builders | 3 (`C, S, E`) | State mutation (or via `shouldRebuild`) |
+| `context.select<C, S, R>(selector)` | **Recommended for sub-widgets**: Read and subscribe to a granular slice `R` directly inside `build()` | 3 (`C, S, R`) | Value equality (`==`) of `R` |
+| `CommanderSelector<C, S, R>` | Declarative widget alternative to isolate rebuilds to a sub-tree based on slice `R` | 3 (`C, S, R`) | Value equality (`==`) of `R` |
+| `CommanderStateBuilder<C, S>` | Rebuild an isolated child sub-tree when full state updates (without side effects) | 2 (`C, S`) | Any state mutation (or via `buildWhen`) |
+| `CommanderListener<C, E>` | Standalone side-effect execution (navigation, dialogs, toasts) for headless/non-screen widgets | 2 (`C, E`) | Never (side-effects stream only) |
 | `context.dispatch<C>(intent)` | Dispatch an intent from any `BuildContext` | 1 (`C`) | Never (fire-and-forget) |
 
 > **🚀 The Modern DX Choice: `CommanderView`**
 >
-> Instead of nesting `CommanderListener` + `CommanderStateBuilder` / `CommanderConsumer`, use `CommanderView`. It handles the lifecycle, side-effects via `onEffect`, passes `state` directly into `build(context, state)`, and provides an optional `shouldRebuild(previous, current)` hook for fine-grained rebuild filtering. For surgical sub-widget rebuilds, pair it with Flutter's native `Builder` + `context.select`.
+> Instead of nesting `CommanderListener` + `CommanderStateBuilder` (or legacy consumer widgets), use `CommanderView`. It handles the lifecycle, executes one-shot side-effects via `onEffect`, passes `state` directly into `build(context, state)`, and provides an optional `shouldRebuild(previous, current)` hook for fine-grained rebuild filtering. For surgical sub-widget rebuilds, pair it with Flutter's native `Builder` + `context.select`.
 
-> **💡 Best Practice: `CommanderListener` vs. `CommanderStateConsumer`**
+> **💡 Architecture Best Practice: Screen-Level vs. Sub-Widget Reactivity**
 >
-> - **Golden Rule:** *Listen to effects high up in the widget tree, rebuild UI as deep and localized as possible.*
-> - **Use `CommanderListener`** at the screen root (wrapping your `Scaffold`) when handling global side-effects (navigation, `SnackBar`, alerts). Pair it with localized `CommanderSelector` or `CommanderStateBuilder` widgets deeper in the tree so state changes never cause full-screen rebuilds.
-> - **Use `CommanderStateConsumer`** when a self-contained, localized widget (like an isolated card, modal dialog, or bottom sheet) needs **both** to react to effects and rebuild its own UI, saving you from manually nesting a listener and builder.
+> - **Screen / Feature Root:** Extend `CommanderView<C, S, E>` as the root of your screen or feature view. It automatically handles one-shot side effects via `onEffect`, provides direct access to `state` in `build(context, state)`, enforces mounted-context checks, and eliminates nested listener/builder pyramids.
+> - **Granular Sub-Widgets:** For high-frequency or isolated elements (e.g. cart badges, item counters, status pills), extract them into dedicated widgets and use **`context.select<C, S, R>`** (or **`CommanderSelector`**). This ensures that state changes to individual properties only rebuild those specific sub-widgets rather than the entire screen.
+> - **Headless / Dialog Listeners:** Use **`CommanderListener<C, E>`** only when an isolated component (e.g. an alert dialog, bottom sheet, or non-screen service widget) needs to react to side effects without rendering UI based on state.
+
+> ℹ️ **Legacy Widgets (`CommanderConsumer`, `CommanderStateConsumer`):**
+> Prior to `CommanderView`, `CommanderConsumer` and `CommanderStateConsumer` were used to combine builder and listener widgets. While still maintained for backward compatibility, new code should always use `CommanderView` for screens and `context.select` / `CommanderSelector` for sub-widgets.
 
 #### Store Page Implementation (`CartPage` with `CommanderView`)
 
