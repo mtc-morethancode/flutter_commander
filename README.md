@@ -8,19 +8,29 @@
 
 **Enterprise MVI + Command Pattern architecture for Flutter.**
 
-`flutter_commander` brings decoupled enterprise-grade state management to Flutter without code generation, without god-classes, and with declarative concurrency control built directly into each use-case.
+`flutter_commander` brings decoupled, highly testable, enterprise-grade state management to Flutter without code generation, without bloated controllers, and with declarative concurrency control built directly into each use case.
 
 ```bash
 flutter pub add flutter_commander
 ```
 
-> 🔄 **Migrating from another state manager?** Check out our dedicated migration guides: [**Migrating from BLoC**](doc/migration_from_bloc.md) | [**Migrating from Riverpod**](doc/migration_from_riverpod.md) with side-by-side code comparisons and copy-paste prompts for AI assistants (Cursor, Copilot, Claude).
+---
+
+## ✨ Why `flutter_commander`?
+
+* 🎯 **Atomic Single-Responsibility Commands:** Break complex business domains into isolated, reusable `Command` classes. Each action owns its logic, dependencies, and execution rules.
+* ⚡ **Declarative Concurrency Control:** Solve race conditions, double-tap prevention, debounced live search, and sequential queues natively using `ExecutionPolicy` with zero stream boilerplate.
+* 🔔 **First-Class One-Shot SideEffects:** Handle dialogs, SnackBars, and navigation via a dedicated broadcast channel with automatic cold-start FIFO buffering and mounted-context verification.
+* 🧼 **Ergonomic UI with `CommanderView`:** Say goodbye to nested builder pyramids. Render state, listen to effects, and filter rebuilds in a single clean widget.
+* 🧩 **Composable Mixins:** Add zero-flicker state persistence (`SavedStateMixin`) and comprehensive undo/redo time-travel (`UndoRedoMixin`) via idiomatic Dart 3 mixins.
+* 🧪 **Deterministic, Streamless Testing:** Test business logic synchronously with `TestCommandScope`—no timers, stream subscriptions, or widget pumps required.
+* 🚫 **Zero Code Generation:** 100% pure Dart 3. Instant compilation, crystal-clear stack traces, and maximum developer velocity.
 
 ---
 
 ## ⚡ 3-Minute Quickstart
 
-In a rush? Here is the entire unidirectional MVI flow in a single, self-contained 50-line snippet using **`CommanderView`** (zero nested builder pyramids):
+Here is the complete unidirectional MVI flow in a single, self-contained 50-line snippet using **`CommanderView`**:
 
 ```dart
 import 'package:flutter/material.dart';
@@ -196,7 +206,7 @@ class ToggleVipIntent extends CommandIntent {
 
 ### 2. Declarative Concurrency Policies (`ExecutionPolicy`)
 
-Each isolated operation lives in its own dedicated `Command` class with an explicit `ExecutionPolicy`. This eliminates race conditions with **zero RxDart boilerplate**:
+Each isolated operation lives in its own dedicated `Command` class with an explicit `ExecutionPolicy`. This eliminates race conditions natively and declaratively:
 
 | Policy | Behavior in the Store App | Typical Use Case |
 | :--- | :--- | :--- |
@@ -346,7 +356,7 @@ class CartCommander extends Commander<CartState, CartEffect> {
 
 > **🚀 The Modern DX Choice: `CommanderView`**
 >
-> Instead of nesting `CommanderListener` + `CommanderStateBuilder`, use `CommanderView`. It handles the lifecycle, executes one-shot side-effects via `onEffect`, passes `state` directly into `build(context, state)`, and provides an optional `shouldRebuild(previous, current)` hook for fine-grained rebuild filtering. For surgical sub-widget rebuilds, pair it with Flutter's native `Builder` + `context.select`.
+> Instead of nesting listeners and builders, use `CommanderView`. It handles the lifecycle, executes one-shot side-effects via `onEffect`, passes `state` directly into `build(context, state)`, and provides an optional `shouldRebuild(previous, current)` hook for fine-grained rebuild filtering. For surgical sub-widget rebuilds, pair it with Flutter's native `Builder` + `context.select`.
 
 > **💡 Architecture Best Practice: Screen-Level vs. Sub-Widget Reactivity**
 >
@@ -382,7 +392,7 @@ class CartPage extends CommanderView<CartCommander, CartState, CartEffect> {
     }
   }
 
-  // 2. Optional fine-grained rebuild filtering (replaces buildWhen)
+  // 2. Optional fine-grained rebuild filtering
   @override
   bool shouldRebuild(CartState previous, CartState current) {
     return previous.items != current.items ||
@@ -521,7 +531,7 @@ class CartCommander extends Commander<CartState, CartEffect>
     with SavedStateMixin<CartState, CartEffect> {
   CartCommander() : super(const CartState()) {
     // 1. Zero-Flicker Synchronous Restoration:
-    // Because Hive pre-warms boxes in RAM, state restores synchronously with 0 frame flicker!
+    // Because in-memory boxes are pre-warmed, state restores synchronously with 0 frame flicker!
     restoreStateSync();
   }
 
@@ -549,7 +559,7 @@ class CartCommander extends Commander<CartState, CartEffect>
 
 ### 6. Atomic Unit Testing with `TestCommandScope`
 
-Unit testing in `flutter_commander` is deterministic, requires **zero widget pumping, zero streams, and zero timers**:
+Unit testing in `flutter_commander` is deterministic, synchronous, and requires **zero widget pumping, zero streams, and zero timers**:
 
 ```dart
 test('CheckoutCommand processes payment, clears cart and emits confirmation', () async {
@@ -628,11 +638,9 @@ class AppStoreObserver extends CommanderObserver {
 
 ---
 
-### 8. Time-Travel & Undo / Redo (`UndoRedoMixin`)
+### 8. Composable Time-Travel & Undo / Redo (`UndoRedoMixin`)
 
-Traditional state management libraries (like BLoC with `replay_bloc`) suffered from a severe architectural limitation: forcing inheritance from a concrete base class (`ReplayBloc<Event, State>`). If your application required both persistent storage and undo/redo history, you hit the classic **multiple inheritance diamond problem** (`HydratedReplayBloc`), creating combinatory monstrosities.
-
-`flutter_commander` solves this through Dart's idiomatic mixin architecture: **`UndoRedoMixin<S, E>`**. You can mix it onto **any** `Commander` and combine it freely with other mixins (such as `SavedStateMixin`) with zero type conflicts or rigid hierarchies.
+Built on Dart 3's idiomatic mixin architecture, **`UndoRedoMixin<S, E>`** gives any `Commander` full history navigation and time-travel capabilities. Because it is a mixin rather than a rigid base class, it composes seamlessly with persistence (`SavedStateMixin`) and custom mixins with zero type conflicts.
 
 #### A. Basic Mixin Usage
 
@@ -712,17 +720,14 @@ context.dispatch<CanvasCommander>(const ClearHistoryIntent());
 
 ---
 
-### 9. Architectural Comparison
+## 📚 Ecosystem, Comparison & Migration
 
-| Feature | flutter_commander | BLoC | Riverpod |
-| :--- | :---: | :---: | :---: |
-| **Concurrency Control** | Declarative (`DROP`, `RESTART`, `QUEUE`, `CONCURRENT`) | Requires custom RxDart transformers | Manual cancel tokens |
-| **Separation of Concerns** | Single-responsibility `Command` classes | Centralized Bloc with multiple event handlers | Notifiers with multiple methods |
-| **One-Shot Effects Channel** | First-class `SideEffect` broadcast stream | State flags or external stream adapters | State flags or external streams |
-| **State Persistence** | Agnostic `SavedStateMixin` & `SavedStateStore` (0-flicker sync/async restoration) | Coupled to `hydrated_bloc` (forced inheritance) | Not built-in / manual notifier state serialization |
-| **Undo / Redo (Time-Travel)** | Idiomatic `UndoRedoMixin` (composable with any mixin, intent-driven or direct) | Rigid `replay_bloc` (inheritance diamond problem with `hydrated_bloc`) | Complex manual state history stacks |
-| **Code Generation** | ❌ None (Pure Dart 3) | ❌ Optional | ⚠️ Recommended |
-| **Business Logic Testing** | Atomic & synchronous via `TestCommandScope` | `blocTest` (async with stream delays) | `ProviderContainer` mocking |
+Whether you are evaluating architectural options for a new project or migrating an existing app, explore our dedicated guides:
+
+* ⚖️ [**Detailed Architectural Comparison**](doc/comparison.md): An objective side-by-side matrix comparing `flutter_commander` with BLoC and Riverpod.
+* 📦 [**Migrating from BLoC**](doc/migration_from_bloc.md): Step-by-step migration guide with AI prompts and side-by-side examples.
+* 🌊 [**Migrating from Riverpod**](doc/migration_from_riverpod.md): Step-by-step migration guide from Riverpod providers to Commander.
+* 📖 [**Universal Migration Guide**](doc/migration_guide.md): Universal MVI core principles and transition overview.
 
 ---
 
