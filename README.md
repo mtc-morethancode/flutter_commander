@@ -329,7 +329,7 @@ class CartCommander extends Commander<CartState, CartEffect> {
 
 | Widget / Extension | Purpose | Generics | Rebuilds On |
 | :--- | :--- | :---: | :--- |
-| `CommanderView<C, S, E>` | **Recommended for screens**: Combines state reactivity, side-effects, and intent dispatch with zero nested builders | 3 (`C, S, E`) | Any state mutation |
+| `CommanderView<C, S, E>` | **Recommended for screens**: Combines state reactivity, side-effects, and intent dispatch with zero nested builders | 3 (`C, S, E`) | State mutation (or via `shouldRebuild`) |
 | `CommanderStateBuilder<C, S>` | Rebuild when full state updates | 2 (`C, S`) | Any state mutation |
 | `CommanderSelector<C, S, R>` | Rebuild **only** when projected slice `R` changes | 3 (`C, S, R`) | Value equality (`==`) of `R` |
 | `CommanderListener<C, E>` | Execute one-shot side effects (navigation, dialogs, toasts) | 2 (`C, E`) | Never (side-effects stream only) |
@@ -340,7 +340,7 @@ class CartCommander extends Commander<CartState, CartEffect> {
 
 > **🚀 The Modern DX Choice: `CommanderView`**
 >
-> Instead of nesting `CommanderListener` + `CommanderStateBuilder` / `CommanderConsumer`, use `CommanderView`. It handles the lifecycle, side-effects via `onEffect`, and passes `state` directly into `build(context, state)`. For granular rebuilds of high-frequency sub-widgets, pair it with Flutter's native `Builder` + `context.select`.
+> Instead of nesting `CommanderListener` + `CommanderStateBuilder` / `CommanderConsumer`, use `CommanderView`. It handles the lifecycle, side-effects via `onEffect`, passes `state` directly into `build(context, state)`, and provides an optional `shouldRebuild(previous, current)` hook for fine-grained rebuild filtering. For surgical sub-widget rebuilds, pair it with Flutter's native `Builder` + `context.select`.
 
 > **💡 Best Practice: `CommanderListener` vs. `CommanderStateConsumer`**
 >

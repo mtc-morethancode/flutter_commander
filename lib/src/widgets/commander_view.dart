@@ -65,6 +65,20 @@ abstract class CommanderView<C extends Commander<S, E>, S, E>
   /// Defaults to returning `true` for all effects.
   bool listenWhen(E effect) => true;
 
+  /// Optional condition to control whether this view should rebuild when the commander's state changes.
+  ///
+  /// Defaults to checking value inequality (`previous != current`).
+  ///
+  /// Override this method to selectively ignore specific state mutations:
+  /// ```dart
+  /// @override
+  /// bool shouldRebuild(CartState previous, CartState current) {
+  ///   return previous.items != current.items;
+  /// }
+  /// ```
+  bool shouldRebuild(S previous, S current) =>
+      !identical(previous, current) && previous != current;
+
   /// Dispatches a [CommandIntent] to the bound [Commander].
   ///
   /// Resolves the commander from [commander] or from [context] via [CommanderScope].
@@ -119,8 +133,7 @@ class _CommanderViewState<C extends Commander<S, E>, S, E>
     if (commander == null) return;
 
     final newState = commander.state;
-    final shouldRebuild =
-        !identical(_currentState, newState) && _currentState != newState;
+    final shouldRebuild = widget.shouldRebuild(_currentState, newState);
     _currentState = newState;
 
     if (shouldRebuild && mounted) {

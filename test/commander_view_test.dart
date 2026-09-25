@@ -91,6 +91,8 @@ class CounterPageView
     extends CommanderView<TestCommander, TestState, TestEffect> {
   final void Function(BuildContext context, TestEffect effect)? onEffectCallback;
   final bool Function(TestEffect effect)? listenWhenCallback;
+  final bool Function(TestState previous, TestState current)?
+      shouldRebuildCallback;
   final void Function(int buildCount)? onBuilt;
 
   const CounterPageView({
@@ -98,6 +100,7 @@ class CounterPageView
     super.commander,
     this.onEffectCallback,
     this.listenWhenCallback,
+    this.shouldRebuildCallback,
     this.onBuilt,
   });
 
@@ -112,6 +115,14 @@ class CounterPageView
       return listenWhenCallback!(effect);
     }
     return super.listenWhen(effect);
+  }
+
+  @override
+  bool shouldRebuild(TestState previous, TestState current) {
+    if (shouldRebuildCallback != null) {
+      return shouldRebuildCallback!(previous, current);
+    }
+    return super.shouldRebuild(previous, current);
   }
 
   @override
@@ -194,6 +205,45 @@ void main() {
       await tester.pump();
 
       expect(buildCount, equals(2));
+
+      commander.dispose();
+    });
+
+    testWidgets(
+        'respects shouldRebuild filter to conditionally prevent rebuilds',
+        (tester) async {
+      final commander = TestCommander();
+      var buildCount = 0;
+
+      await tester.pumpWidget(
+        CommanderScope<TestCommander>.value(
+          value: commander,
+          child: CounterPageView(
+            onBuilt: (_) => buildCount++,
+            // Only rebuild when title changes, ignore count mutations
+            shouldRebuildCallback: (prev, curr) => prev.title != curr.title,
+          ),
+        ),
+      );
+
+      expect(buildCount, equals(1));
+      expect(find.text('Count: 0'), findsOneWidget);
+      expect(find.text('Title: Default'), findsOneWidget);
+
+      // Increment count -> shouldRebuild returns false -> no rebuild!
+      await commander.dispatch(const IncrementIntent());
+      await tester.pump();
+
+      expect(buildCount, equals(1));
+      expect(find.text('Count: 0'), findsOneWidget);
+
+      // Update title -> shouldRebuild returns true -> rebuilds!
+      await commander.dispatch(const SetTitleIntent('Updated Title'));
+      await tester.pump();
+
+      expect(buildCount, equals(2));
+      expect(find.text('Title: Updated Title'), findsOneWidget);
+      expect(find.text('Count: 1'), findsOneWidget);
 
       commander.dispose();
     });
