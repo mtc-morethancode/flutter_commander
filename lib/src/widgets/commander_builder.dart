@@ -66,6 +66,15 @@ class _CommanderBuilderState<C extends Commander<S, dynamic>, S, R>
     super.didUpdateWidget(oldWidget);
     if (widget.commander != oldWidget.commander) {
       _subscribe();
+    } else if (widget.commander == null) {
+      final current = CommanderScope.of<C>(context, listen: false);
+      if (_commander != current) {
+        _subscribe();
+      } else if (widget.select != oldWidget.select) {
+        if (_commander != null) {
+          _currentValue = _computeValue(_commander!.state);
+        }
+      }
     } else if (widget.select != oldWidget.select) {
       if (_commander != null) {
         _currentValue = _computeValue(_commander!.state);
@@ -75,13 +84,16 @@ class _CommanderBuilderState<C extends Commander<S, dynamic>, S, R>
 
   void _subscribe() {
     final commander =
-        widget.commander ?? CommanderScope.of<C>(context, listen: false);
+        widget.commander ?? CommanderScope.dependOnCommander<C>(context);
     if (_commander == commander) return;
 
     _commander?.removeListener(_onStateChanged);
     _commander = commander;
     _commander!.addListener(_onStateChanged);
     _currentValue = _computeValue(_commander!.state);
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   R _computeValue(S state) {

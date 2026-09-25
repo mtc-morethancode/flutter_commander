@@ -113,12 +113,17 @@ class _CommanderViewState<C extends Commander<S, E>, S, E>
     super.didUpdateWidget(oldWidget);
     if (widget.commander != oldWidget.commander) {
       _subscribe();
+    } else if (widget.commander == null) {
+      final current = CommanderScope.of<C>(context, listen: false);
+      if (_commander != current) {
+        _subscribe();
+      }
     }
   }
 
   void _subscribe() {
     final commander =
-        widget.commander ?? CommanderScope.of<C>(context, listen: false);
+        widget.commander ?? CommanderScope.dependOnCommander<C>(context);
     if (_commander == commander) return;
 
     _unsubscribe();
@@ -127,6 +132,9 @@ class _CommanderViewState<C extends Commander<S, E>, S, E>
 
     commander.addListener(_onStateChanged);
     _effectSubscription = commander.effects.listen(_onEffect);
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   void _onStateChanged() {

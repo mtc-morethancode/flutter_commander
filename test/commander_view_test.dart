@@ -391,6 +391,42 @@ void main() {
       commanderB.dispose();
     });
 
+    testWidgets(
+        'CommanderView resubscribes when inherited commander instance changes',
+        (tester) async {
+      final commanderA = TestCommander(initialCount: 10, initialTitle: 'A');
+      final commanderB = TestCommander(initialCount: 20, initialTitle: 'B');
+
+      Widget buildTree(TestCommander commander) {
+        return CommanderScope<TestCommander>.value(
+          value: commander,
+          child: const CounterPageView(),
+        );
+      }
+
+      await tester.pumpWidget(buildTree(commanderA));
+      expect(find.text('Title: A'), findsOneWidget);
+      expect(find.text('Count: 10'), findsOneWidget);
+
+      // Swap inherited commander
+      await tester.pumpWidget(buildTree(commanderB));
+      expect(find.text('Title: B'), findsOneWidget);
+      expect(find.text('Count: 20'), findsOneWidget);
+
+      // Mutate commanderA -> view should NOT update
+      await commanderA.dispatch(const IncrementIntent());
+      await tester.pump();
+      expect(find.text('Count: 20'), findsOneWidget);
+
+      // Mutate commanderB -> view SHOULD update
+      await commanderB.dispatch(const IncrementIntent());
+      await tester.pump();
+      expect(find.text('Count: 21'), findsOneWidget);
+
+      commanderA.dispose();
+      commanderB.dispose();
+    });
+
     testWidgets('commanderOf helper returns the bound commander',
         (tester) async {
       final commander = TestCommander();

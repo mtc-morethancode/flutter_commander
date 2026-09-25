@@ -251,6 +251,51 @@ void main() {
       expect(commander.isDisposed, isTrue);
     });
 
+    test('cold-start side effects are buffered and replayed on first listen',
+        () async {
+      final freshCommander = TestCommander();
+
+      // Emit effect while NO listener is connected
+      await freshCommander.dispatch(const IncrementIntent(5));
+
+      // Now attach listener
+      final received = <CounterEffect>[];
+      final sub = freshCommander.effects.listen(received.add);
+
+      // Wait for microtask flush
+      await Future<void>.delayed(Duration.zero);
+
+      expect(received, hasLength(1));
+      expect(
+        received.first,
+        equals(const ShowToastEffect('Incremented by 5')),
+      );
+
+      // Subsequent effects while listener is active are received immediately
+      await freshCommander.dispatch(const IncrementIntent(1));
+      expect(received, hasLength(2));
+      expect(
+        received.last,
+        equals(const ShowToastEffect('Incremented by 1')),
+      );
+
+      await sub.cancel();
+      freshCommander.dispose();
+    });
+
+    test('cold-start buffer clears pending effects on dispose', () async {
+      final freshCommander = TestCommander();
+      await freshCommander.dispatch(const IncrementIntent(5));
+      freshCommander.dispose();
+
+      final received = <CounterEffect>[];
+      final sub = freshCommander.effects.listen(received.add);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(received, isEmpty);
+      await sub.cancel();
+    });
+
     test(
         'CommandRegistry caches polymorphic resolution for O(1) subsequent lookups',
         () {

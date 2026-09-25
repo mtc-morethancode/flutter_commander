@@ -70,6 +70,25 @@ class CommanderScope<C extends Commander<dynamic, dynamic>>
     }
   }
 
+  /// Obtains the nearest [Commander] of type [C] and registers a dependency ONLY
+  /// on the commander instance itself (rebuilding dependencies only if the commander
+  /// instance changes, not on normal state mutations).
+  static C dependOnCommander<C extends Commander<dynamic, dynamic>>(
+    BuildContext context,
+  ) {
+    final model = InheritedModel.inheritFrom<_CommanderInheritedModel<C>>(
+      context,
+      aspect: const _CommanderInstanceAspect(),
+    );
+    if (model == null) {
+      throw FlutterError(
+        'CommanderScope.dependOnCommander<$C>() could not find a matching CommanderScope<$C>.\n'
+        'Ensure the widget is wrapped within a CommanderScope<$C>.',
+      );
+    }
+    return model.commander;
+  }
+
   /// Subscribes to a specific slice [R] of state [S] from commander [C].
   ///
   /// The calling widget will only rebuild when the value returned by [selector]
@@ -171,6 +190,10 @@ class _CommanderInheritedModel<C extends Commander<dynamic, dynamic>>
     _CommanderInheritedModel<C> oldWidget,
     Set<_Aspect> dependencies,
   ) {
+    if (!identical(commander, oldWidget.commander)) {
+      return true;
+    }
+
     if (dependencies.isEmpty) {
       return true;
     }
@@ -187,6 +210,13 @@ class _CommanderInheritedModel<C extends Commander<dynamic, dynamic>>
 
 abstract class _Aspect {
   bool hasChanged(dynamic oldState, dynamic newState);
+}
+
+class _CommanderInstanceAspect implements _Aspect {
+  const _CommanderInstanceAspect();
+
+  @override
+  bool hasChanged(dynamic oldState, dynamic newState) => false;
 }
 
 class _SelectorAspect<S, R> implements _Aspect {

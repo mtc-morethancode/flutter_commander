@@ -68,19 +68,24 @@ class _CommanderListenerState<C extends Commander<dynamic, E>, E>
     super.didUpdateWidget(oldWidget);
     if (widget.commander != oldWidget.commander) {
       _subscribe();
+    } else if (widget.commander == null) {
+      final current = CommanderScope.of<C>(context, listen: false);
+      if (_commander != current) {
+        _subscribe();
+      }
     }
   }
 
   void _subscribe() {
     final commander =
-        widget.commander ?? CommanderScope.of<C>(context, listen: false);
+        widget.commander ?? CommanderScope.dependOnCommander<C>(context);
     if (_commander == commander) return;
 
     _subscription?.cancel();
     _commander = commander;
 
     _subscription = _commander!.effects.listen((effect) {
-      if (!mounted) return;
+      if (!mounted || !context.mounted) return;
       if (widget.listenWhen != null && !widget.listenWhen!(effect)) {
         return;
       }

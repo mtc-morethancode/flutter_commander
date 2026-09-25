@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 
 import 'package:flutter/foundation.dart';
 
@@ -49,11 +50,20 @@ abstract class Commander<S, E>
   /// all commanders in the application.
   static CommanderObserver? observer;
 
+  /// In debug mode, logs a diagnostic warning when an `updateState` reducer
+  /// returns the exact same state reference (`identical(oldState, newState)`).
+  ///
+  /// This helps catch in-place mutation bugs (e.g. `state.items.add(x); return state;`)
+  /// which cause state updates to be skipped.
+  static bool debugWarnOnIdenticalState = true;
+
+  static const int _maxPendingEffectsBuffer = 32;
+  final Queue<E> _unhandledEffectsBuffer = Queue<E>();
+
   S _state;
   bool _isDisposed = false;
 
-  final StreamController<E> _effectsController =
-      StreamController<E>.broadcast();
+  late final StreamController<E> _effectsController;
   final List<CommandInterceptor> _interceptors = [];
   late final CommandRegistry<S, E> _registry;
   late final CommandRunner<S, E> _runner;
@@ -64,6 +74,10 @@ abstract class Commander<S, E>
     if (interceptors != null) {
       _interceptors.addAll(interceptors);
     }
+
+    _effectsController = StreamController<E>.broadcast(
+      onListen: _flushPendingEffects,
+    );
 
     Commander.observer?.onCommanderCreated(this);
     _registry = CommandRegistry<S, E>();
@@ -77,6 +91,20 @@ abstract class Commander<S, E>
         onError(error, stackTrace, intent);
       },
     );
+  }
+
+  void _flushPendingEffects() {
+    if (_unhandledEffectsBuffer.isEmpty) return;
+
+    // Dispatch buffered cold-start effects to the newly attached listener
+    scheduleMicrotask(() {
+      while (_unhandledEffectsBuffer.isNotEmpty &&
+          !_effectsController.isClosed &&
+          _effectsController.hasListener) {
+        final effect = _unhandledEffectsBuffer.removeFirst();
+        _effectsController.add(effect);
+      }
+    });
   }
 
   /// The current state of this commander.
@@ -194,6 +222,18 @@ abstract class Commander<S, E>
 
     // Skip if state is identical or equal
     if (identical(oldState, newState) || oldState == newState) {
+      assert(() {
+        if (identical(oldState, newState) &&
+            debugWarnOnIdenticalState &&
+            kDebugMode) {
+          debugPrint(
+            '[flutter_commander] [Warning] updateState reducer in $runtimeType returned the identical state instance. '
+            'If you modified fields in-place on the existing state, the update was skipped because '
+            'flutter_commander enforces immutability. Return a new state instance (e.g. using copyWith).',
+          );
+        }
+        return true;
+      }());
       return;
     }
 
@@ -231,8 +271,16 @@ abstract class Commander<S, E>
       }
     }
 
-    if (!_effectsController.isClosed) {
-      _effectsController.add(effect);
+    if (_effectsController.hasListener) {
+      if (!_effectsController.isClosed) {
+        _effectsController.add(effect);
+      }
+    } else {
+      // Buffer cold-start effect until first listener subscribes
+      if (_unhandledEffectsBuffer.length >= _maxPendingEffectsBuffer) {
+        _unhandledEffectsBuffer.removeFirst();
+      }
+      _unhandledEffectsBuffer.add(effect);
     }
   }
 
@@ -243,6 +291,7 @@ abstract class Commander<S, E>
     _isDisposed = true;
 
     Commander.observer?.onCommanderDisposed(this);
+    _unhandledEffectsBuffer.clear();
     _runner.dispose();
     _registry.clear();
     unawaited(_effectsController.close());

@@ -405,6 +405,81 @@ void main() {
     });
 
     testWidgets(
+        'CommanderBuilder resubscribes when inherited commander instance changes',
+        (tester) async {
+      final commanderA = AppCommander();
+      final commanderB = AppCommander();
+
+      Widget buildTree(AppCommander commander) {
+        return MaterialApp(
+          home: CommanderScope<AppCommander>.value(
+            value: commander,
+            child: CommanderStateBuilder<AppCommander, AppState>(
+              builder: (context, state) => Text('Count: ${state.count}'),
+            ),
+          ),
+        );
+      }
+
+      // 1. Initial render with commanderA
+      await tester.pumpWidget(buildTree(commanderA));
+      expect(find.text('Count: 0'), findsOneWidget);
+
+      // 2. Swap to commanderB
+      await tester.pumpWidget(buildTree(commanderB));
+      expect(find.text('Count: 0'), findsOneWidget);
+
+      // 3. Mutating commanderA should NOT update UI
+      await commanderA.dispatch(const IncIntent());
+      await tester.pump();
+      expect(find.text('Count: 0'), findsOneWidget);
+
+      // 4. Mutating commanderB SHOULD update UI
+      await commanderB.dispatch(const IncIntent());
+      await tester.pump();
+      expect(find.text('Count: 1'), findsOneWidget);
+
+      commanderA.dispose();
+      commanderB.dispose();
+    });
+
+    testWidgets(
+        'CommanderListener resubscribes when inherited commander instance changes',
+        (tester) async {
+      final commanderA = AppCommander();
+      final commanderB = AppCommander();
+      final effects = <String>[];
+
+      Widget buildTree(AppCommander commander) {
+        return MaterialApp(
+          home: CommanderScope<AppCommander>.value(
+            value: commander,
+            child: CommanderListener<AppCommander, AppEffect>(
+              onEffect: (context, effect) => effects.add(effect.snackbarText),
+              child: const Text('Child'),
+            ),
+          ),
+        );
+      }
+
+      await tester.pumpWidget(buildTree(commanderA));
+      await tester.pumpWidget(buildTree(commanderB));
+
+      // Emit on old commanderA: should NOT receive effect
+      await commanderA.dispatch(const NotifyEffectIntent('from A'));
+      await tester.pump();
+      expect(effects, isEmpty);
+
+      // Emit on new commanderB: SHOULD receive effect
+      await commanderB.dispatch(const NotifyEffectIntent('from B'));
+      await tester.pump();
+      expect(effects, equals(['from B']));
+
+      commanderA.dispose();
+      commanderB.dispose();
+    });
+
+    testWidgets(
         'CommanderBuildContextX context.dispatch and context.select work',
         (tester) async {
       final commander = AppCommander();
