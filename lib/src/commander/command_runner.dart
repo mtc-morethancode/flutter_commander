@@ -284,24 +284,27 @@ class CommandRunner<S, E> {
           },
           onError: (Object error, StackTrace stackTrace) {
             _inFlightTokens.remove(token);
-            if (error is! CancellationException) {
-              _reportError(
-                command,
-                intent,
-                error,
-                stackTrace,
-                hasObserver,
-                hasInterceptors,
-              );
-            }
-            if (hasObserver) {
-              Commander.observer!.onAfterExecute(_commander, command, intent);
-            }
-            if (hasInterceptors) {
-              for (var i = 0; i < _interceptors.length; i++) {
-                try {
-                  _interceptors[i].onAfterExecute(command, intent);
-                } catch (_) {}
+            try {
+              if (error is! CancellationException) {
+                _reportError(
+                  command,
+                  intent,
+                  error,
+                  stackTrace,
+                  hasObserver,
+                  hasInterceptors,
+                );
+              }
+            } finally {
+              if (hasObserver) {
+                Commander.observer!.onAfterExecute(_commander, command, intent);
+              }
+              if (hasInterceptors) {
+                for (var i = 0; i < _interceptors.length; i++) {
+                  try {
+                    _interceptors[i].onAfterExecute(command, intent);
+                  } catch (_) {}
+                }
               }
             }
           },
@@ -333,22 +336,25 @@ class CommandRunner<S, E> {
       }
       return null;
     } catch (error, stackTrace) {
-      _reportError(
-        command,
-        intent,
-        error,
-        stackTrace,
-        hasObserver,
-        hasInterceptors,
-      );
-      if (hasObserver) {
-        Commander.observer!.onAfterExecute(_commander, command, intent);
-      }
-      if (hasInterceptors) {
-        for (var i = 0; i < _interceptors.length; i++) {
-          try {
-            _interceptors[i].onAfterExecute(command, intent);
-          } catch (_) {}
+      try {
+        _reportError(
+          command,
+          intent,
+          error,
+          stackTrace,
+          hasObserver,
+          hasInterceptors,
+        );
+      } finally {
+        if (hasObserver) {
+          Commander.observer!.onAfterExecute(_commander, command, intent);
+        }
+        if (hasInterceptors) {
+          for (var i = 0; i < _interceptors.length; i++) {
+            try {
+              _interceptors[i].onAfterExecute(command, intent);
+            } catch (_) {}
+          }
         }
       }
       return null;

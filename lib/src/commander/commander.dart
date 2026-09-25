@@ -215,6 +215,11 @@ abstract class Commander<S, E>
 
     final result = _runner.run(command, intent);
     if (result is Future) {
+      // Attach an internal error handler to the future chain so that if
+      // the caller uses fire-and-forget (e.g. onPressed: () => dispatch(...))
+      // and does not await it, an unhandled error will not crash the root Zone.
+      // Callers that DO await or expectLater will still receive the error normally.
+      result.catchError((_) {});
       return result;
     }
     return Future<void>.value();
