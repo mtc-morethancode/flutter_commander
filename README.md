@@ -14,77 +14,84 @@
 flutter pub add flutter_commander
 ```
 
-> 🔄 **Migrating from BLoC or Riverpod?** Check out our step-by-step [**Migration Guide (Human & AI-Ready)**](doc/migration_guide.md) with side-by-side code comparisons and copy-paste prompts for AI assistants (Cursor, Copilot, Claude).
+> 🔄 **Migrating from another state manager?** Check out our dedicated migration guides: [**Migrating from BLoC**](doc/migration_from_bloc.md) | [**Migrating from Riverpod**](doc/migration_from_riverpod.md) with side-by-side code comparisons and copy-paste prompts for AI assistants (Cursor, Copilot, Claude).
 
 ---
 
 ## ⚡ 3-Minute Quickstart
 
-In a rush? Here is the entire unidirectional MVI flow in a single, self-contained 40-line snippet:
+In a rush? Here is the entire unidirectional MVI flow in a single, self-contained 50-line snippet using **`CommanderView`** (zero nested builder pyramids):
 
 ```dart
 import 'package:flutter/material.dart';
 import 'package:flutter_commander/flutter_commander.dart';
 
-// 1. State & One-Shot Effect
-class CartState {
+// 1. Presentation State & One-Shot SideEffect
+class CounterState {
   final int count;
-  const CartState({this.count = 0});
+  const CounterState([this.count = 0]);
 }
-sealed class CartEffect { const CartEffect(); }
-class ShowToastEffect extends CartEffect {
+
+sealed class CounterEffect { const CounterEffect(); }
+class ShowToastEffect extends CounterEffect {
   final String message;
   const ShowToastEffect(this.message);
 }
 
 // 2. Intent
-class AddItemIntent extends CommandIntent { const AddItemIntent(); }
+class IncrementIntent extends CommandIntent { const IncrementIntent(); }
 
-// 3. Commander with Inline DSL or Command
-class CartCommander extends Commander<CartState, CartEffect> {
-  CartCommander() : super(const CartState()) {
-    on<AddItemIntent>((scope, intent) {
-      scope.updateState((s) => CartState(count: s.count + 1));
-      scope.emitSideEffect(const ShowToastEffect('Item added to cart!'));
+// 3. Commander Orchestrator (Inline DSL)
+class CounterCommander extends Commander<CounterState, CounterEffect> {
+  CounterCommander() : super(const CounterState()) {
+    on<IncrementIntent>((scope, intent) {
+      scope.updateState((s) => CounterState(s.count + 1));
+      if (state.count % 5 == 0) {
+        scope.emitSideEffect(ShowToastEffect('Milestone reached: ${state.count}!'));
+      }
     });
   }
 }
 
-// 4. Reactive UI
-class QuickstartApp extends StatelessWidget {
-  const QuickstartApp({super.key});
+// 4. Reactive UI with CommanderView (Zero nested builders!)
+class CounterPage extends CommanderView<CounterCommander, CounterState, CounterEffect> {
+  const CounterPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return CommanderScope<CartCommander>(
-      create: (_) => CartCommander(),
-      child: CommanderListener<CartCommander, CartEffect>(
-        onEffect: (context, effect) {
-          if (effect is ShowToastEffect) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(effect.message)));
-          }
-        },
-        child: Scaffold(
-          body: Center(
-            child: CommanderSelector<CartCommander, CartState, int>(
-              select: (s) => s.count,
-              builder: (context, count) => Text('Items: $count', style: const TextStyle(fontSize: 24)),
-            ),
-          ),
-          floatingActionButton: Builder(
-            builder: (context) => FloatingActionButton(
-              onPressed: () => context.dispatch<CartCommander>(const AddItemIntent()),
-              child: const Icon(Icons.add),
-            ),
-          ),
-        ),
+  void onEffect(BuildContext context, CounterEffect effect) {
+    if (effect is ShowToastEffect) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(effect.message)));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, CounterState state) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Commander Counter')),
+      body: Center(
+        child: Text('Count: ${state.count}', style: const TextStyle(fontSize: 32)),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => context.dispatch<CounterCommander>(const IncrementIntent()),
+        child: const Icon(Icons.add),
       ),
     );
   }
 }
+
+void main() {
+  runApp(
+    MaterialApp(
+      home: CommanderScope<CounterCommander>(
+        create: (_) => CounterCommander(),
+        child: const CounterPage(),
+      ),
+    ),
+  );
+}
 ```
 
-That's it! Strict unidirectional flow, persistent presentation state, and decoupled one-shot side effects.
+That's it! Strict unidirectional flow, persistent presentation state, first-class one-shot side effects, and clean, declarative UI with zero nesting.
 
 ---
 
@@ -348,82 +355,85 @@ class CartCommander extends Commander<CartState, CartEffect> {
 > - **Use `CommanderListener`** at the screen root (wrapping your `Scaffold`) when handling global side-effects (navigation, `SnackBar`, alerts). Pair it with localized `CommanderSelector` or `CommanderStateBuilder` widgets deeper in the tree so state changes never cause full-screen rebuilds.
 > - **Use `CommanderStateConsumer`** when a self-contained, localized widget (like an isolated card, modal dialog, or bottom sheet) needs **both** to react to effects and rebuild its own UI, saving you from manually nesting a listener and builder.
 
-#### Store Page Implementation (`CartPage`)
+#### Store Page Implementation (`CartPage` with `CommanderView`)
 
 ```dart
-class CartPage extends StatelessWidget {
+// Provided at the screen route:
+CommanderScope<CartCommander>(
+  create: (context) => CartCommander(
+    paymentService: PaymentService(),
+    catalogService: CatalogService(),
+    analyticsService: AnalyticsService(),
+  ),
+  child: const CartPage(),
+);
+
+// The screen extends CommanderView: Zero nested pyramids!
+class CartPage extends CommanderView<CartCommander, CartState, CartEffect> {
   const CartPage({super.key});
 
+  // 1. One-shot side-effects (safe: automatically checks if context is mounted)
   @override
-  Widget build(BuildContext context) {
-    return CommanderScope<CartCommander>(
-      create: (context) => CartCommander(
-        paymentService: PaymentService(),
-        catalogService: CatalogService(),
-        analyticsService: AnalyticsService(),
+  void onEffect(BuildContext context, CartEffect effect) {
+    switch (effect) {
+      case ShowToastEffect(:final message):
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+      case OrderConfirmedEffect(:final orderId):
+        Navigator.of(context).pushNamed('/order-success/$orderId');
+    }
+  }
+
+  // 2. Optional fine-grained rebuild filtering (replaces buildWhen)
+  @override
+  bool shouldRebuild(CartState previous, CartState current) {
+    return previous.items != current.items ||
+        previous.searchResults != current.searchResults ||
+        previous.isCheckingOut != current.isCheckingOut;
+  }
+
+  // 3. Clean build method with direct state access
+  @override
+  Widget build(BuildContext context, CartState state) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Commander Store'),
+        actions: const [CartBadge()],
       ),
-      child: CommanderListener<CartCommander, CartEffect>(
-        onEffect: (context, effect) {
-          switch (effect) {
-            case ShowToastEffect(:final message):
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
-            case OrderConfirmedEffect(:final orderId):
-              Navigator.of(context).pushNamed('/order-success/$orderId');
-          }
-        },
-        child: Scaffold(
-          appBar: AppBar(
-            title: const Text('Commander Store'),
-            actions: const [CartBadge()],
-          ),
-          body: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                // Live search field with 300ms debounce
-                TextField(
-                  decoration: const InputDecoration(labelText: 'Search products'),
-                  onChanged: (query) => context.dispatch<CartCommander>(SearchProductsIntent(query)),
-                ),
-                const SizedBox(height: 16),
-                // Rebuilds ONLY when search results update
-                Expanded(
-                  child: CommanderSelector<CartCommander, CartState, List<String>>(
-                    select: (state) => state.searchResults,
-                    builder: (context, results) {
-                      return ListView.builder(
-                        itemCount: results.length,
-                        itemBuilder: (context, index) {
-                          final item = results[index];
-                          return ListTile(
-                            title: Text(item),
-                            trailing: IconButton(
-                              icon: const Icon(Icons.add_shopping_cart),
-                              onPressed: () => context.dispatch<CartCommander>(AddToCartIntent(item)),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  ),
-                ),
-                // Checkout button with double-tap protection
-                CommanderSelector<CartCommander, CartState, bool>(
-                  select: (state) => state.isCheckingOut,
-                  builder: (context, isCheckingOut) {
-                    return ElevatedButton(
-                      onPressed: isCheckingOut
-                          ? null
-                          : () => context.dispatch<CartCommander>(const CheckoutIntent()),
-                      child: isCheckingOut
-                          ? const CircularProgressIndicator.adaptive()
-                          : const Text('Complete Purchase'),
-                    );
-                  },
-                ),
-              ],
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            // Live search field with 300ms debounce
+            TextField(
+              decoration: const InputDecoration(labelText: 'Search products'),
+              onChanged: (query) => context.dispatch<CartCommander>(SearchProductsIntent(query)),
             ),
-          ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: ListView.builder(
+                itemCount: state.searchResults.length,
+                itemBuilder: (context, index) {
+                  final item = state.searchResults[index];
+                  return ListTile(
+                    title: Text(item),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.add_shopping_cart),
+                      onPressed: () => context.dispatch<CartCommander>(AddToCartIntent(item)),
+                    ),
+                  );
+                },
+              ),
+            ),
+            // Checkout button with double-tap protection
+            ElevatedButton(
+              onPressed: state.isCheckingOut
+                  ? null
+                  : () => context.dispatch<CartCommander>(const CheckoutIntent()),
+              child: state.isCheckingOut
+                  ? const CircularProgressIndicator.adaptive()
+                  : const Text('Complete Purchase'),
+            ),
+          ],
         ),
       ),
     );
@@ -447,6 +457,12 @@ class CartBadge extends StatelessWidget {
   }
 }
 ```
+
+> **🛡️ Enterprise Reliability Built-In:**
+>
+> - **Cold-Start Effect Buffering**: Side effects emitted during commander construction or before the UI finishes mounting are stored in a 32-element FIFO buffer and flushed automatically as soon as the first listener attaches. You will never drop an initial error toast or auth redirect.
+> - **Mounted Context Guard**: Both `CommanderView` and `CommanderListener` automatically verify `context.mounted` before invoking `onEffect`. Showing dialogs, SnackBars, or route transitions is safe by default even across async delays.
+> - **Dynamic Scope Swapping**: `CommanderScope.dependOnCommander` tracks instance identity, ensuring immediate resubscription and rebuilds when swapping commander instances at runtime, even inside deeply nested `const` subtrees.
 
 ---
 
