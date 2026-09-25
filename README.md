@@ -346,16 +346,13 @@ class CartCommander extends Commander<CartState, CartEffect> {
 
 > **🚀 The Modern DX Choice: `CommanderView`**
 >
-> Instead of nesting `CommanderListener` + `CommanderStateBuilder` (or legacy consumer widgets), use `CommanderView`. It handles the lifecycle, executes one-shot side-effects via `onEffect`, passes `state` directly into `build(context, state)`, and provides an optional `shouldRebuild(previous, current)` hook for fine-grained rebuild filtering. For surgical sub-widget rebuilds, pair it with Flutter's native `Builder` + `context.select`.
+> Instead of nesting `CommanderListener` + `CommanderStateBuilder`, use `CommanderView`. It handles the lifecycle, executes one-shot side-effects via `onEffect`, passes `state` directly into `build(context, state)`, and provides an optional `shouldRebuild(previous, current)` hook for fine-grained rebuild filtering. For surgical sub-widget rebuilds, pair it with Flutter's native `Builder` + `context.select`.
 
 > **💡 Architecture Best Practice: Screen-Level vs. Sub-Widget Reactivity**
 >
 > - **Screen / Feature Root:** Extend `CommanderView<C, S, E>` as the root of your screen or feature view. It automatically handles one-shot side effects via `onEffect`, provides direct access to `state` in `build(context, state)`, enforces mounted-context checks, and eliminates nested listener/builder pyramids.
 > - **Granular Sub-Widgets:** For high-frequency or isolated elements (e.g. cart badges, item counters, status pills), extract them into dedicated widgets and use **`context.select<C, S, R>`** (or **`CommanderSelector`**). This ensures that state changes to individual properties only rebuild those specific sub-widgets rather than the entire screen.
 > - **Headless / Dialog Listeners:** Use **`CommanderListener<C, E>`** only when an isolated component (e.g. an alert dialog, bottom sheet, or non-screen service widget) needs to react to side effects without rendering UI based on state.
-
-> ℹ️ **Legacy Widgets (`CommanderConsumer`, `CommanderStateConsumer`):**
-> Prior to `CommanderView`, `CommanderConsumer` and `CommanderStateConsumer` were used to combine builder and listener widgets. While still maintained for backward compatibility, new code should always use `CommanderView` for screens and `context.select` / `CommanderSelector` for sub-widgets.
 
 #### Store Page Implementation (`CartPage` with `CommanderView`)
 

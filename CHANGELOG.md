@@ -15,7 +15,9 @@
 * **Testing**: `TestCommandScope` harness for fast, widget-free, deterministic command unit testing.
 * **Widgets & Flutter Integration**:
   * `CommanderScope`: InheritedWidget lifecycle manager.
+  * `CommanderView`: Unified screen base widget with direct state access, effect handling, and zero nested builders.
   * `CommanderBuilder`: Selector-based rebuild optimization.
+  * `CommanderSelector`: Declarative slice selector.
+  * `CommanderStateBuilder`: Simplified full-state builder.
   * `CommanderListener`: Dedicated side-effect listener.
-  * `CommanderConsumer`: Combined builder and listener.
   * `CommanderBuildContextX`: Clean extensions (`context.commander`, `context.dispatch`, `context.select`).
