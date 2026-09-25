@@ -69,10 +69,14 @@ mixin SavedStateMixin<S, E> on Commander<S, E> {
   Timer? _debounceTimer;
   bool _isRestoring = false;
   bool _isRestored = false;
+  bool _isDirty = false;
   Completer<bool>? _restoreCompleter;
 
   /// Whether this commander's state has been restored from storage.
   bool get isRestored => _isRestored;
+
+  /// Whether the state has been mutated in memory before or after restoration.
+  bool get isDirty => _isDirty;
 
   /// A [Future] that completes with `true` when state restoration finishes successfully,
   /// or `false` if no saved state was found or an error occurred.
@@ -111,6 +115,7 @@ mixin SavedStateMixin<S, E> on Commander<S, E> {
           final restored = stateFromJson(data);
           restoreState(restored);
           _isRestored = true;
+          _isDirty = false;
           _restoreCompleter?.complete(true);
           return true;
         } finally {
@@ -141,33 +146,65 @@ mixin SavedStateMixin<S, E> on Commander<S, E> {
           result is Future<Map<String, dynamic>?> ? await result : result;
 
       if (json != null && !isDisposed) {
-        _isRestoring = true;
-        try {
-          final restored = stateFromJson(json);
-          restoreState(restored);
-          _isRestored = true;
-          if (!(_restoreCompleter?.isCompleted ?? true)) {
-            _restoreCompleter?.complete(true);
+        final restored = stateFromJson(json);
+        if (_isDirty) {
+          // The state was already mutated in-flight by user actions before
+          // the async storage read finished. Reconcile to avoid discarding fresh changes.
+          final resolved = resolveRestorationConflict(restored, state);
+          if (resolved != null && resolved != state) {
+            _isRestoring = true;
+            try {
+              restoreState(resolved);
+            } finally {
+              _isRestoring = false;
+            }
           }
-          return;
-        } finally {
-          _isRestoring = false;
+          _schedulePersist(state);
+        } else {
+          _isRestoring = true;
+          try {
+            restoreState(restored);
+          } finally {
+            _isRestoring = false;
+          }
         }
+        _isRestored = true;
+        if (!(_restoreCompleter?.isCompleted ?? true)) {
+          _restoreCompleter?.complete(true);
+        }
+        return;
       }
     } catch (e, stack) {
       onSavedStateError(e, stack);
     }
 
-    _isRestored = false;
+    _isRestored = true;
+    if (_isDirty && !isDisposed) {
+      _schedulePersist(state);
+    }
     if (!(_restoreCompleter?.isCompleted ?? true)) {
       _restoreCompleter?.complete(false);
     }
   }
 
+  /// Hook called when asynchronous state restoration completes from storage, but
+  /// the state was already mutated in-flight ([currentState]) by user actions
+  /// or early commands before the storage read finished.
+  ///
+  /// By default, returns [currentState] to preserve the user's fresh in-memory changes
+  /// rather than blindly overwriting them with stale data from disk.
+  ///
+  /// Subclasses can override this method to perform selective merging or conflict resolution.
+  @protected
+  S? resolveRestorationConflict(S diskState, S currentState) => currentState;
+
   @override
   void onStateChanged(S oldState, S newState) {
     super.onStateChanged(oldState, newState);
-    if (!_isRestoring && !isDisposed) {
+    if (!_isRestoring) {
+      _isDirty = true;
+    }
+    if (!_isRestoring && !isDisposed && _isRestored) {
       _schedulePersist(newState);
     }
   }
@@ -207,6 +244,7 @@ mixin SavedStateMixin<S, E> on Commander<S, E> {
   /// Deletes the persisted state from [savedStateStore].
   Future<void> clearSavedState() async {
     _debounceTimer?.cancel();
+    _isDirty = false;
     try {
       final result = savedStateStore.delete(savedStateKey);
       if (result is Future) {

@@ -390,7 +390,7 @@ void main() {
       final commander = AsyncCounterCommander(store: store);
       await commander.dispatch(const IncrementIntent());
 
-      await Future<void>.delayed(const Duration(milliseconds: 40));
+      await Future<void>.delayed(const Duration(milliseconds: 80));
       expect(commander.caughtErrors, isNotEmpty);
       // Ensure commander still functions and state remains in memory
       expect(commander.state.count, 1);
