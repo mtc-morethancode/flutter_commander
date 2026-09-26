@@ -74,6 +74,12 @@ abstract class CommanderView<C extends Commander<S, E>, S, E>
   /// ghost notifications or conflicting navigations.
   bool get listenOnlyWhenActive => true;
 
+  /// Whether to buffer side-effects received while this view's route is inactive
+  /// and flush them in chronological order once this view becomes top-most and active again.
+  ///
+  /// Defaults to `false` (drops inactive effects).
+  bool get bufferWhileInactive => false;
+
   /// Optional condition to control whether this view should rebuild when the commander's state changes.
   ///
   /// Defaults to checking value inequality (`previous != current`).
@@ -109,11 +115,20 @@ class _CommanderViewState<C extends Commander<S, E>, S, E>
   C? _commander;
   StreamSubscription<E>? _effectSubscription;
   late S _currentState;
+  final List<E> _inactiveBuffer = <E>[];
+  ModalRoute<dynamic>? _observedRoute;
+  Animation<double>? _secondaryAnimation;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _subscribe();
+    if (widget.bufferWhileInactive && _inactiveBuffer.isNotEmpty) {
+      final route = ModalRoute.of(context);
+      if (route != null && route.isCurrent) {
+        _flushInactiveBuffer();
+      }
+    }
   }
 
   @override
@@ -178,15 +193,62 @@ class _CommanderViewState<C extends Commander<S, E>, S, E>
     if (widget.listenOnlyWhenActive) {
       final route = ModalRoute.of(context);
       if (route != null && !route.isCurrent) {
+        if (widget.bufferWhileInactive) {
+          _inactiveBuffer.add(effect);
+          _listenToRouteReactivation(route);
+        }
         return;
       }
     }
+    _dispatchEffect(effect);
+  }
+
+  void _dispatchEffect(E effect) {
+    if (!mounted || !context.mounted) return;
     if (widget.listenWhen(effect)) {
       widget.onEffect(context, effect);
     }
   }
 
+  void _listenToRouteReactivation(ModalRoute<dynamic> route) {
+    if (_observedRoute == route) return;
+    _detachRouteReactivationListener();
+    _observedRoute = route;
+
+    final secAnim = route.secondaryAnimation;
+    if (secAnim != null) {
+      _secondaryAnimation = secAnim;
+      secAnim.addStatusListener(_onRouteAnimationStatus);
+    }
+  }
+
+  void _onRouteAnimationStatus(AnimationStatus status) {
+    if (status == AnimationStatus.dismissed) {
+      _flushInactiveBuffer();
+    }
+  }
+
+  void _flushInactiveBuffer() {
+    if (!mounted || !context.mounted) return;
+    final route = _observedRoute ?? ModalRoute.of(context);
+    if (route != null && !route.isCurrent) return;
+
+    final pending = List<E>.from(_inactiveBuffer);
+    _inactiveBuffer.clear();
+    for (final effect in pending) {
+      _dispatchEffect(effect);
+    }
+  }
+
+  void _detachRouteReactivationListener() {
+    _secondaryAnimation?.removeStatusListener(_onRouteAnimationStatus);
+    _secondaryAnimation = null;
+    _observedRoute = null;
+  }
+
   void _unsubscribe() {
+    _detachRouteReactivationListener();
+    _inactiveBuffer.clear();
     _commander?.removeListener(_onStateChanged);
     _effectSubscription?.cancel();
     _effectSubscription = null;
