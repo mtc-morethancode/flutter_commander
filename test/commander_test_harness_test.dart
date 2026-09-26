@@ -80,18 +80,17 @@ class CustomTestException implements Exception {
 }
 
 // Test Commander
-class HarnessCommander
-    extends Commander<HarnessCounterState, HarnessEffect> {
+class HarnessCommander extends Commander<HarnessCounterState, HarnessEffect> {
   HarnessCommander({
     super.interceptors,
     HarnessCounterState? initialState,
   }) : super(
-          initialState ??
-              const HarnessCounterState(count: 0, status: 'idle'),
+          initialState ?? const HarnessCounterState(count: 0, status: 'idle'),
         ) {
     on<IncrementCountIntent>((scope, intent) {
       scope.updateState(
-        (s) => s.copyWith(count: s.count + intent.amount, status: 'incremented'),
+        (s) =>
+            s.copyWith(count: s.count + intent.amount, status: 'incremented'),
       );
       scope.emitSideEffect(AlertEffect('Count is now ${scope.state.count}'));
     });
