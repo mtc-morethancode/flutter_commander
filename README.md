@@ -348,10 +348,10 @@ class CartCommander extends Commander<CartState, CartEffect> {
 | :--- | :--- | :---: | :--- |
 | `CommanderScope<C>` | Provide and manage the lifecycle of a `Commander` in the widget tree | 1 (`C`) | Commander instance swap |
 | `CommanderView<C, S, E>` | **Recommended for screens & features**: Combines state reactivity, side-effects, intent dispatch, and rebuild filtering with zero nested builders | 3 (`C, S, E`) | State mutation (or via `shouldRebuild`) |
-| `context.select<C, S, R>(selector)` | **Recommended for sub-widgets**: Read and subscribe to a granular slice `R` directly inside `build()` | 3 (`C, S, R`) | Value equality (`==`) of `R` |
+| `context.select((C c) => c.state.slice)` | **Recommended for sub-widgets**: Read and subscribe to a granular slice directly inside `build()` with zero-ceremony type inference | 0 (or 2: `C, R`) | Value equality (`==`) of slice |
 | `CommanderSelector<C, S, R>` | Declarative widget alternative to isolate rebuilds to a sub-tree based on slice `R` | 3 (`C, S, R`) | Value equality (`==`) of `R` |
 | `CommanderStateBuilder<C, S>` | Rebuild an isolated child sub-tree when full state updates (without side effects) | 2 (`C, S`) | Any state mutation (or via `buildWhen`) |
-| `CommanderListener<C, E>` | Standalone side-effect execution (navigation, dialogs, toasts) for headless/non-screen widgets | 2 (`C, E`) | Never (side-effects stream only) |
+| `CommanderListener<C, E>` | Standalone side-effect execution (navigation, dialogs, toasts) with optional `bufferWhileInactive` | 2 (`C, E`) | Never (side-effects stream only) |
 | `context.dispatch<C>(intent)` | Dispatch an intent from any `BuildContext` | 1 (`C`) | Never (fire-and-forget) |
 
 > **🚀 The Modern DX Choice: `CommanderView`**
@@ -361,8 +361,8 @@ class CartCommander extends Commander<CartState, CartEffect> {
 > **💡 Architecture Best Practice: Screen-Level vs. Sub-Widget Reactivity**
 >
 > - **Screen / Feature Root:** Extend `CommanderView<C, S, E>` as the root of your screen or feature view. It automatically handles one-shot side effects via `onEffect`, provides direct access to `state` in `build(context, state)`, enforces mounted-context checks, and eliminates nested listener/builder pyramids.
-> - **Granular Sub-Widgets:** For high-frequency or isolated elements (e.g. cart badges, item counters, status pills), extract them into dedicated widgets and use **`context.select<C, S, R>`** (or **`CommanderSelector`**). This ensures that state changes to individual properties only rebuild those specific sub-widgets rather than the entire screen.
-> - **Headless / Dialog Listeners:** Use **`CommanderListener<C, E>`** only when an isolated component (e.g. an alert dialog, bottom sheet, or non-screen service widget) needs to react to side effects without rendering UI based on state.
+> - **Granular Sub-Widgets:** For high-frequency or isolated elements (e.g. cart badges, item counters, status pills), extract them into dedicated widgets and use **`context.select((CartCommander c) => c.state.itemCount)`** (or **`CommanderSelector`**). This ensures that state changes to individual properties only rebuild those specific sub-widgets rather than the entire screen, with zero generic type boilerplate.
+> - **Headless / Dialog Listeners:** Use **`CommanderListener<C, E>`** only when an isolated component (e.g. an alert dialog, bottom sheet, or non-screen service widget) needs to react to side effects without rendering UI based on state. Supports `bufferWhileInactive: true` for delayed delivery upon route reactivation.
 
 #### Store Page Implementation (`CartPage` with `CommanderView`)
 
@@ -455,8 +455,8 @@ class CartBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Rebuilds ONLY when itemCount changes:
-    final count = context.select<CartCommander, CartState, int>((s) => s.itemCount);
+    // Rebuilds ONLY when itemCount changes (zero generic boilerplate):
+    final count = context.select((CartCommander c) => c.state.itemCount);
 
     return Badge(
       label: Text('$count'),

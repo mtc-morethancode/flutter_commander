@@ -40,7 +40,7 @@ Follow these strict migration rules:
    - Replace `buildWhen` with `shouldRebuild(previous, current)`.
    - Put one-shot UI logic (SnackBars, dialogs, route navigation) inside `onEffect: (context, effect)`. Note that `CommanderView` automatically validates that the widget is mounted before executing `onEffect`.
    - Replace `context.read<Bloc>().add(Event())` with `context.dispatch<[Feature]Commander>(Intent())`.
-   - For granular sub-tree rebuilding, use `CommanderSelector` or `context.select<[Feature]Commander, State, Slice>((s) => s.slice)`.
+   - For granular sub-tree rebuilding, use `CommanderSelector` or `context.select(([Feature]Commander c) => c.state.slice)`.
 
 5. TESTING:
    - Replace `blocTest` stream mocks with `TestCommandScope<State, Effect>`.

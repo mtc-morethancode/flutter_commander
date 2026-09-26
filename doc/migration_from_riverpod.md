@@ -39,7 +39,7 @@ Follow these strict migration rules:
    - Replace `ConsumerWidget` or `ConsumerStatefulWidget` with standard `StatelessWidget` and `CommanderView<[Feature]Commander, State, Effect>`.
    - Move side-effect handling out of `ref.listen` and into `onEffect: (context, effect)`. Note that `CommanderView` automatically validates that the widget is mounted before executing `onEffect`.
    - Replace `ref.read(provider.notifier).myMethod()` with `context.dispatch<[Feature]Commander>(MyIntent())`.
-   - Replace `ref.watch(provider.select((s) => s.slice))` with `context.select<[Feature]Commander, State, Slice>((s) => s.slice)` or `CommanderSelector`.
+   - Replace `ref.watch(provider.select((s) => s.slice))` with `context.select(([Feature]Commander c) => c.state.slice)` or `CommanderSelector`.
 
 5. TESTING:
    - Replace `ProviderContainer` mocks with `TestCommandScope<State, Effect>`.
@@ -317,7 +317,7 @@ class CartPage extends CommanderView<CartCommander, CartState, CartEffect> {
 | **Type-ahead search cancellation** | Manual `CancelToken` or timer management | `ExecutionPolicy.restart` + `debounce` |
 | **Show SnackBar once** | Diff `prev` and `next` in `ref.listen` | `emitSideEffect(MyEffect())` |
 | **Cold-start side effects** | Missed or lost if listener attaches late | Buffered automatically until UI mounts |
-| **Granular sub-widget rebuilds** | `ref.watch(provider.select(...))` | `context.select<C, S, R>((s) => s.slice)` |
+| **Granular sub-widget rebuilds** | `ref.watch(provider.select(...))` | `context.select((C c) => c.state.slice)` |
 
 ---
 
