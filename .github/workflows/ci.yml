@@ -39,7 +39,11 @@ jobs:
         run: flutter test --coverage
 
       - name: Verify pub.dev Publish Readiness
-        run: dart pub publish --dry-run
+        run: |
+          git status
+          git diff analysis_options.yaml || true
+          git checkout -- .
+          flutter pub publish --dry-run
 
       # --- Example App Verification ---
       - name: Install Example Dependencies
