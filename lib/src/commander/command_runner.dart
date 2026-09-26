@@ -143,18 +143,23 @@ class CommandRunner<S, E> {
     final token = CancellationToken();
     _activeTokens[execKey] = token;
 
-    final execution = _executeCommand(command, intent, token);
-    if (execution is Future) {
-      _activeExecutions[execKey] = execution;
-      return execution.whenComplete(() {
-        if (_activeExecutions[execKey] == execution) {
-          _activeExecutions.remove(execKey);
-          _activeTokens.remove(execKey);
-        }
-      });
-    } else {
+    try {
+      final execution = _executeCommand(command, intent, token);
+      if (execution is Future) {
+        _activeExecutions[execKey] = execution;
+        return execution.whenComplete(() {
+          if (_activeExecutions[execKey] == execution) {
+            _activeExecutions.remove(execKey);
+            _activeTokens.remove(execKey);
+          }
+        });
+      } else {
+        _activeTokens.remove(execKey);
+        return null;
+      }
+    } catch (_) {
       _activeTokens.remove(execKey);
-      return null;
+      rethrow;
     }
   }
 
@@ -181,20 +186,28 @@ class CommandRunner<S, E> {
     final token = CancellationToken();
     _activeTokens[execKey] = token;
 
-    final execution = _executeCommand(command, intent, token);
-    if (execution is Future) {
-      _activeExecutions[execKey] = execution;
-      try {
-        await execution;
-      } finally {
-        if (_activeTokens[execKey] == token) {
-          _activeTokens.remove(execKey);
-          final _ = _activeExecutions.remove(execKey);
+    try {
+      final execution = _executeCommand(command, intent, token);
+      if (execution is Future) {
+        _activeExecutions[execKey] = execution;
+        try {
+          await execution;
+        } finally {
+          if (_activeTokens[execKey] == token) {
+            _activeTokens.remove(execKey);
+            final _ = _activeExecutions.remove(execKey);
+          }
         }
+      } else {
+        _activeTokens.remove(execKey);
+        final _ = _activeExecutions.remove(execKey);
       }
-    } else {
-      _activeTokens.remove(execKey);
-      final _ = _activeExecutions.remove(execKey);
+    } catch (_) {
+      if (_activeTokens[execKey] == token) {
+        _activeTokens.remove(execKey);
+        final _ = _activeExecutions.remove(execKey);
+      }
+      rethrow;
     }
   }
 
@@ -282,7 +295,9 @@ class CommandRunner<S, E> {
     final hasInterceptors = _interceptors.isNotEmpty;
 
     if (hasObserver) {
-      Commander.observer!.onBeforeExecute(_commander, command, intent);
+      try {
+        Commander.observer!.onBeforeExecute(_commander, command, intent);
+      } catch (_) {}
     }
     if (hasInterceptors) {
       for (var i = 0; i < _interceptors.length; i++) {
@@ -310,7 +325,9 @@ class CommandRunner<S, E> {
               arguments: const <String, String>{'status': 'completed'},
             );
             if (hasObserver) {
-              Commander.observer!.onAfterExecute(_commander, command, intent);
+              try {
+                Commander.observer!.onAfterExecute(_commander, command, intent);
+              } catch (_) {}
             }
             if (hasInterceptors) {
               for (var i = 0; i < _interceptors.length; i++) {
@@ -347,7 +364,10 @@ class CommandRunner<S, E> {
               }
             } finally {
               if (hasObserver) {
-                Commander.observer!.onAfterExecute(_commander, command, intent);
+                try {
+                  Commander.observer!
+                      .onAfterExecute(_commander, command, intent);
+                } catch (_) {}
               }
               if (hasInterceptors) {
                 for (var i = 0; i < _interceptors.length; i++) {
@@ -365,7 +385,9 @@ class CommandRunner<S, E> {
           arguments: const <String, String>{'status': 'completed'},
         );
         if (hasObserver) {
-          Commander.observer!.onAfterExecute(_commander, command, intent);
+          try {
+            Commander.observer!.onAfterExecute(_commander, command, intent);
+          } catch (_) {}
         }
         if (hasInterceptors) {
           for (var i = 0; i < _interceptors.length; i++) {
@@ -378,7 +400,9 @@ class CommandRunner<S, E> {
       }
     } on CancellationException {
       if (hasObserver) {
-        Commander.observer!.onAfterExecute(_commander, command, intent);
+        try {
+          Commander.observer!.onAfterExecute(_commander, command, intent);
+        } catch (_) {}
       }
       if (hasInterceptors) {
         for (var i = 0; i < _interceptors.length; i++) {
@@ -400,7 +424,9 @@ class CommandRunner<S, E> {
         );
       } finally {
         if (hasObserver) {
-          Commander.observer!.onAfterExecute(_commander, command, intent);
+          try {
+            Commander.observer!.onAfterExecute(_commander, command, intent);
+          } catch (_) {}
         }
         if (hasInterceptors) {
           for (var i = 0; i < _interceptors.length; i++) {
@@ -423,8 +449,10 @@ class CommandRunner<S, E> {
     bool hasInterceptors,
   ) {
     if (hasObserver) {
-      Commander.observer!
-          .onError(_commander, command, intent, error, stackTrace);
+      try {
+        Commander.observer!
+            .onError(_commander, command, intent, error, stackTrace);
+      } catch (_) {}
     }
     if (hasInterceptors) {
       for (var i = 0; i < _interceptors.length; i++) {
@@ -589,6 +617,8 @@ class _ControlledCommandScope<S, E> implements CommandScope<S, E> {
     void Function()? onDone,
     bool? cancelOnError,
   }) {
+    late final void Function() detach;
+
     final subscription = stream.listen(
       (data) {
         if (!cancellationToken.isCancelled && onData != null) {
@@ -607,6 +637,7 @@ class _ControlledCommandScope<S, E> implements CommandScope<S, E> {
         }
       },
       onDone: () {
+        detach();
         if (!cancellationToken.isCancelled && onDone != null) {
           onDone();
         }
@@ -614,7 +645,7 @@ class _ControlledCommandScope<S, E> implements CommandScope<S, E> {
       cancelOnError: cancelOnError,
     );
 
-    cancellationToken.attach(() {
+    detach = cancellationToken.attach(() {
       unawaited(subscription.cancel());
     });
 

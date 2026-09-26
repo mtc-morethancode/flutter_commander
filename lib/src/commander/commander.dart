@@ -87,7 +87,9 @@ abstract class Commander<S, E>
       onListen: _flushPendingEffects,
     );
 
-    Commander.observer?.onCommanderCreated(this);
+    try {
+      Commander.observer?.onCommanderCreated(this);
+    } catch (_) {}
     _registry = CommandRegistry<S, E>();
     _runner = CommandRunner<S, E>(
       commander: this,
@@ -221,16 +223,22 @@ abstract class Commander<S, E>
       throw UnregisteredIntentException(intent);
     }
 
-    final result = _runner.run(command, intent);
-    if (result is Future) {
-      // Attach an internal error handler to the future chain so that if
-      // the caller uses fire-and-forget (e.g. onPressed: () => dispatch(...))
-      // and does not await it, an unhandled error will not crash the root Zone.
-      // Callers that DO await or expectLater will still receive the error normally.
-      result.catchError((_) {});
-      return result;
+    try {
+      final result = _runner.run(command, intent);
+      if (result is Future) {
+        // Attach an internal error handler to the future chain so that if
+        // the caller uses fire-and-forget (e.g. onPressed: () => dispatch(...))
+        // and does not await it, an unhandled error will not crash the root Zone.
+        // Callers that DO await or expectLater will still receive the error normally.
+        result.catchError((_) {});
+        return result;
+      }
+      return Future<void>.value();
+    } catch (error, stackTrace) {
+      final future = Future<void>.error(error, stackTrace);
+      future.catchError((_) {});
+      return future;
     }
-    return Future<void>.value();
   }
 
   /// Updates the state using the provided pure [reducer].
@@ -282,7 +290,9 @@ abstract class Commander<S, E>
     }
 
     if (Commander.observer != null) {
-      Commander.observer!.onStateChanged(this, oldState, newState);
+      try {
+        Commander.observer!.onStateChanged(this, oldState, newState);
+      } catch (_) {}
     }
     if (_interceptors.isNotEmpty) {
       for (var i = 0; i < _interceptors.length; i++) {
@@ -325,7 +335,9 @@ abstract class Commander<S, E>
     _state = restoredState;
 
     if (Commander.observer != null) {
-      Commander.observer!.onStateChanged(this, oldState, restoredState);
+      try {
+        Commander.observer!.onStateChanged(this, oldState, restoredState);
+      } catch (_) {}
     }
     if (_interceptors.isNotEmpty) {
       for (var i = 0; i < _interceptors.length; i++) {
@@ -353,7 +365,9 @@ abstract class Commander<S, E>
     if (_isDisposed) return;
 
     if (Commander.observer != null) {
-      Commander.observer!.onEffectEmitted(this, effect);
+      try {
+        Commander.observer!.onEffectEmitted(this, effect);
+      } catch (_) {}
     }
     if (_interceptors.isNotEmpty) {
       for (var i = 0; i < _interceptors.length; i++) {
@@ -397,7 +411,9 @@ abstract class Commander<S, E>
     if (_isDisposed) return;
     _isDisposed = true;
 
-    Commander.observer?.onCommanderDisposed(this);
+    try {
+      Commander.observer?.onCommanderDisposed(this);
+    } catch (_) {}
     _unhandledEffectsBuffer.clear();
     _runner.dispose();
     _registry.clear();
