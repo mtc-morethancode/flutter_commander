@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import '../../../core/models/product.dart';
 
 /// Immutable presentation state for the Shop feature.
@@ -56,6 +57,34 @@ class ShopState {
       cartItemCount: cartItemCount ?? this.cartItemCount,
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ShopState &&
+          runtimeType == other.runtimeType &&
+          searchQuery == other.searchQuery &&
+          isSearching == other.isSearching &&
+          isCheckingOut == other.isCheckingOut &&
+          isRefreshing == other.isRefreshing &&
+          hasVipDiscount == other.hasVipDiscount &&
+          cartItemCount == other.cartItemCount &&
+          listEquals(searchResults, other.searchResults) &&
+          listEquals(featuredProducts, other.featuredProducts) &&
+          listEquals(analyticsLog, other.analyticsLog);
+
+  @override
+  int get hashCode => Object.hash(
+        searchQuery,
+        isSearching,
+        isCheckingOut,
+        isRefreshing,
+        hasVipDiscount,
+        cartItemCount,
+        Object.hashAll(searchResults),
+        Object.hashAll(featuredProducts),
+        Object.hashAll(analyticsLog),
+      );
 
   @override
   String toString() =>
