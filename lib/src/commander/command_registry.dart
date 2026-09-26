@@ -12,7 +12,18 @@ class CommandRegistry<S, E> {
 
   /// Registers a formal [command] handling [I] intents.
   void register<I extends CommandIntent>(Command<I, S, E> command) {
+    // 1. Remove any previous polymorphic registration for the same intent type
+    _polymorphicEntries.removeWhere((entry) => entry.intentType == I);
+
+    // 2. Invalidate dynamically cached polymorphic lookups to prevent stale resolution
+    _exactEntries.clear();
+    for (var i = 0; i < _polymorphicEntries.length; i++) {
+      final entry = _polymorphicEntries[i];
+      _exactEntries[entry.intentType] = entry.command;
+    }
     _exactEntries[I] = command;
+
+    // 3. Add fresh polymorphic entry
     _polymorphicEntries.add(_CommandEntry<S, E>(
       intentType: I,
       command: command,

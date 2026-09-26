@@ -55,6 +55,10 @@ class IncrementIntent extends CommandIntent {
   const IncrementIntent([this.amount = 1]);
 }
 
+class SpecialIncrementIntent extends IncrementIntent {
+  const SpecialIncrementIntent([super.amount = 1]);
+}
+
 class SetLabelIntent extends CommandIntent {
   final String label;
   const SetLabelIntent(this.label);
@@ -77,6 +81,17 @@ class IncrementCommand
   ) async {
     scope.updateState((s) => s.copyWith(value: s.value + intent.amount));
     scope.emitSideEffect(ShowToastEffect('Incremented by ${intent.amount}'));
+  }
+}
+
+class SpecialIncrementCommand
+    extends Command<SpecialIncrementIntent, CounterState, CounterEffect> {
+  @override
+  Future<void> execute(
+    CommandScope<CounterState, CounterEffect> scope,
+    SpecialIncrementIntent intent,
+  ) async {
+    scope.updateState((s) => s.copyWith(value: s.value + intent.amount * 2));
   }
 }
 
@@ -310,6 +325,56 @@ void main() {
       // Second lookup hits exact cache
       final second = registry.find(const IncrementIntent(2));
       expect(identical(second, cmd), isTrue);
+    });
+
+    test(
+        'CommandRegistry re-registration clears stale polymorphic cache and replaces previous entry',
+        () {
+      final registry = CommandRegistry<CounterState, CounterEffect>();
+      final cmd1 = IncrementCommand();
+      final cmd2 = IncrementCommand();
+
+      registry.register<IncrementIntent>(cmd1);
+
+      // Polymorphically resolve SpecialIncrementIntent and cache it
+      final firstLookup = registry.find(const SpecialIncrementIntent(1));
+      expect(identical(firstLookup, cmd1), isTrue);
+
+      // Re-register IncrementIntent with cmd2 (e.g. test mock or hot reload)
+      registry.register<IncrementIntent>(cmd2);
+
+      // Stale cache must be purged; SpecialIncrementIntent must now resolve to cmd2
+      final secondLookup = registry.find(const SpecialIncrementIntent(1));
+      expect(identical(secondLookup, cmd2), isTrue);
+
+      // Direct exact match must also resolve to cmd2
+      final directLookup = registry.find(const IncrementIntent(1));
+      expect(identical(directLookup, cmd2), isTrue);
+    });
+
+    test(
+        'Registering specific subtype command overrides previously cached parent polymorphic lookup',
+        () {
+      final registry = CommandRegistry<CounterState, CounterEffect>();
+      final parentCmd = IncrementCommand();
+      final specificCmd = SpecialIncrementCommand();
+
+      registry.register<IncrementIntent>(parentCmd);
+
+      // Resolve SpecialIncrementIntent using parent command and cache it
+      final cachedLookup = registry.find(const SpecialIncrementIntent(1));
+      expect(identical(cachedLookup, parentCmd), isTrue);
+
+      // Now register specific command for SpecialIncrementIntent
+      registry.register<SpecialIncrementIntent>(specificCmd);
+
+      // Cache must be invalidated, resolving to specific command
+      final overrideLookup = registry.find(const SpecialIncrementIntent(1));
+      expect(identical(overrideLookup, specificCmd), isTrue);
+
+      // Parent intent still resolves to parent command
+      final parentLookup = registry.find(const IncrementIntent(1));
+      expect(identical(parentLookup, parentCmd), isTrue);
     });
   });
 }
