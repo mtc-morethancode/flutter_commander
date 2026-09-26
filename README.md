@@ -108,7 +108,7 @@ That's it! Strict unidirectional flow, persistent presentation state, first-clas
 
 ## 🏛️ Engineering Excellence: TDD, SDD, XP & AI Pair-Programming
 
-`flutter_commander` is intentionally built around battle-tested software engineering disciplines: **Test-Driven Development (TDD)**, **Spec-Driven Development (SDD)**, and **Extreme Programming (XP)**. This architectural clarity makes Commander remarkably intuitive for human engineering teams and highly effective when collaborating with modern AI coding assistants (Gemini, Claude, Cursor, GitHub Copilot).
+`flutter_commander` is intentionally built around battle-tested software engineering disciplines: **Test-Driven Development (TDD)**, **Spec-Driven Development (SDD)**, and **Extreme Programming (XP)**. This architectural clarity makes Commander remarkably intuitive for human engineering teams and highly effective when collaborating with modern AI coding agents.
 
 ```
    ┌────────────────────────────────────────────────────────┐
@@ -164,7 +164,7 @@ Commander provides a fast, predictable test harness designed to make the Red-Gre
 * **Collective Ownership & Pair-Programming:** Standardized, single-responsibility files ensure that any team member—human or AI—can inspect, understand, and enhance any feature immediately.
 
 ### 4. Synergy with AI Coding Assistants (AI Pair-Programming)
-When pair-programming with AI agents (Gemini CLI, Cursor, Claude Code, GitHub Copilot), Commander's modular structure solves three common friction points in AI-assisted development:
+When pair-programming with AI agents, Commander's modular structure solves three common friction points in AI-assisted development:
 
 * 📉 **Token Efficiency (Zero Context Bloat):** LLMs perform best on concise, high-signal contexts. In Commander, an AI agent only needs to read the relevant `Intent`, its `Command`, and its test file (~50 lines total)—maximizing attention quality and eliminating context fatigue.
 * 🎯 **Zero Accidental Regressions:** Because each use case is an isolated class, the AI agent **cannot accidentally break** other commands when adding or modifying functionality.
