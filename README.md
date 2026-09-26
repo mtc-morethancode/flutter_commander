@@ -4,7 +4,7 @@
 [![Dart SDK](https://img.shields.io/badge/Dart-3.0+-0175C2.svg)](https://dart.dev)
 [![Flutter](https://img.shields.io/badge/Flutter-3.10+-02569B.svg)](https://flutter.dev)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Coverage](https://img.shields.io/badge/coverage-98.4%25-brightgreen.svg)]()
+[![Coverage](https://img.shields.io/badge/coverage-96%25-brightgreen.svg)]()
 
 **Enterprise MVI + Command Pattern architecture for Flutter.**
 
@@ -195,6 +195,24 @@ Whether you are evaluating architectural options for a new project or migrating 
 * 📦 [**Migrating from BLoC**](doc/migration_from_bloc.md): Step-by-step migration guide with AI prompts and side-by-side examples.
 * 🌊 [**Migrating from Riverpod**](doc/migration_from_riverpod.md): Step-by-step migration guide from Riverpod providers to Commander.
 * 📖 [**Universal Migration Guide**](doc/migration_guide.md): Universal MVI core principles and transition overview.
+
+---
+
+## 🛒 Real-World Example App
+
+Explore a complete, production-grade e-commerce application in the [`example`](example) directory:
+* **`CheckoutCommand`**: Double-tap prevention via `ExecutionPolicy.drop`.
+* **`SearchProductsCommand`**: Debounced type-ahead live search with cooperative cancellation via `ExecutionPolicy.restart`.
+* **`TrackAnalyticsCommand`**: Sequential chronological audit logging via `ExecutionPolicy.queue`.
+* **`ToggleVipDiscountIntent`**: Fast UI-only state mutations using the inline DSL `on<Intent>()`.
+* **`CommanderView` UI**: Clean, non-nested view with mounted effect handling and `context.select` performance optimizations.
+* **Testing Suite**: Declarative orchestrator tests (`commanderTest`) and synchronous atomic unit tests (`TestCommandScope`).
+
+To run the example app locally:
+```bash
+cd example
+flutter run
+```
 
 ---
 

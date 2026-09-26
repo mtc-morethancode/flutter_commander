@@ -21,6 +21,24 @@ class AppStoreObserver extends CommanderObserver {
   }
 
   @override
+  void onBeforeExecute(
+    Commander<dynamic, dynamic>? commander,
+    Command<dynamic, dynamic, dynamic> command,
+    CommandIntent intent,
+  ) {
+    debugPrint('[Execute Start] ${command.runtimeType} with $intent');
+  }
+
+  @override
+  void onAfterExecute(
+    Commander<dynamic, dynamic>? commander,
+    Command<dynamic, dynamic, dynamic> command,
+    CommandIntent intent,
+  ) {
+    debugPrint('[Execute Finish] ${command.runtimeType}');
+  }
+
+  @override
   void onStateChanged(
     Commander<dynamic, dynamic>? commander,
     dynamic oldState,
@@ -48,8 +66,16 @@ class AppStoreObserver extends CommanderObserver {
     // Automatic crash reporting to Firebase Crashlytics or Sentry:
     FirebaseCrashlytics.instance.recordError(error, stackTrace);
   }
+
+  @override
+  void onCommanderDisposed(Commander<dynamic, dynamic> commander) {
+    debugPrint('[Lifecycle] Disposed: ${commander.runtimeType}');
+  }
 }
 ```
+
+> **🛡️ Enterprise Crash Isolation Guarantee:**
+> All calls to `CommanderObserver` are automatically protected by internal error boundaries. If an external crash reporting SDK fails, experiences a network timeout, or throws an unhandled error inside any observer callback, `flutter_commander` isolates the exception to ensure your UI, command execution, and state mutations never crash.
 
 ---
 

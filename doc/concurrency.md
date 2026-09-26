@@ -120,3 +120,47 @@ class TrackAnalyticsCommand extends Command<TrackAnalyticsIntent, CartState, Car
   }
 }
 ```
+
+---
+
+## 5. Cooperative Cancellation & Scope Utilities
+
+`CommandScope` equips commands with first-class helpers for graceful cooperative cancellation and resource management:
+
+| Method / Getter | Description |
+| :--- | :--- |
+| `scope.isCancelled` | Boolean indicating whether cancellation has been requested (e.g. via restart or disposal). |
+| `scope.throwIfCancelled()` | Throws `CancellationException` immediately if cancellation was requested. |
+| `scope.withCancellation(future)` | Races `future` against cancellation; immediately throws `CancellationException` if cancelled without waiting for the future to finish. |
+| `scope.runCancellable(fn)` | Runs synchronous or async computation, automatically racing async futures against cancellation. |
+| `scope.sleep(duration)` | Cancellable delay; aborts immediately rather than blocking until the duration expires. |
+| `scope.listen(stream, ...)` | Subscribes to a stream and automatically cancels the subscription upon command cancellation or disposal. |
+| `scope.forEach(stream, onData: ...)` | Consumes a stream until completed or cancelled, cleaning up automatically. |
+| `scope.attach(onCancel)` | Registers a cleanup teardown callback invoked if the command is cancelled. |
+
+### Example: Live Streaming with Auto-Cancellation
+
+```dart
+class StreamStockQuotesCommand extends Command<WatchQuotesIntent, StockState, StockEffect> {
+  final StockRepository _repository;
+  StreamStockQuotesCommand(this._repository);
+
+  @override
+  ExecutionPolicy get policy => ExecutionPolicy.restart;
+
+  @override
+  Future<void> execute(CommandScope<StockState, StockEffect> scope, WatchQuotesIntent intent) async {
+    // Automatically cancels the subscription when a new intent arrives or on disposal:
+    scope.listen<StockQuote>(
+      _repository.quoteStream(intent.symbol),
+      onData: (quote) {
+        scope.updateState((s) => s.copyWith(currentPrice: quote.price));
+      },
+      onError: (error) {
+        scope.emitSideEffect(ShowToastEffect('Stock feed error: $error'));
+      },
+    );
+  }
+}
+```
+
