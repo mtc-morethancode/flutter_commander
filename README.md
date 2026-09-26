@@ -24,7 +24,6 @@ flutter pub add flutter_commander
 * 🧼 **Ergonomic UI with `CommanderView`:** Say goodbye to nested builder pyramids. Render state, listen to effects, and filter rebuilds in a single clean widget.
 * 🧩 **Composable Mixins:** Add zero-flicker state persistence (`SavedStateMixin`) and comprehensive undo/redo time-travel (`UndoRedoMixin`) via idiomatic Dart 3 mixins.
 * 🧪 **Two-Tier Testing (Declarative & Atomic):** Test entire orchestrators with `commanderTest` (declarative states, side-effects, seeding, and auto-disposal) or test isolated commands with `TestCommandScope`—100% deterministic and streamless.
-* 🤖 **AI-Agent Friendly by Design:** `Command`s map 1:1 to LLM Tools/Function Calling, while `commanderTest` provides an unambiguous machine-executable contract (SDD) for AI pair programming.
 * 🚫 **Zero Code Generation:** 100% pure Dart 3. Instant compilation, crystal-clear stack traces, and maximum developer velocity.
 
 ---
@@ -755,52 +754,6 @@ context.dispatch<CanvasCommander>(const RedoIntent());
 // Clear history:
 context.dispatch<CanvasCommander>(const ClearHistoryIntent());
 ```
-
----
-
-## 🤖 AI-Native Architecture & Agentic Tool Registry
-
-Modern software engineering increasingly pairs human developers with autonomous coding agents (Gemini CLI, Cursor, Claude Code, GitHub Copilot) and embeds on-device intelligent agents (Gemini Nano, Firebase AI Logic). Most state management frameworks were architected prior to the agentic era, resulting in monolithic controllers, ambiguous side effects, and fragile prompt iteration.
-
-`flutter_commander` is built with a dual philosophy: **ergonomic for humans, yet mathematically structured for AI agents.**
-
-### 1. Dual-Use Action Bus: From State Manager to "LLM Tool Registry"
-In `flutter_commander`, every `Command<I extends Intent, S, E>` is structurally identical to an **LLM Tool / Function Declaration**:
-* **The `Intent` is the Tool Schema:** Strongly typed parameters (`final String query`, `final double amount`) map directly to JSON Schema or Gemini / OpenAI `FunctionDeclaration`.
-* **Execution Safety Built-In:** When an LLM executes function calls in rapid succession, Commander's declarative `ExecutionPolicy` (`queue`, `drop`, `restart`, `concurrent`) and `keyedConcurrency` safeguard state consistency—preventing race conditions automatically.
-* **Unified Human-AI Dispatch:**
-  ```dart
-  // Human tap in UI:
-  context.dispatch<ShopCommander>(SearchProductsIntent('coffee'));
-
-  // AI Agent tool execution:
-  commander.dispatch(SearchProductsIntent.fromJson(toolCall.arguments));
-  ```
-  Both paths execute the exact same business logic, emit the same DevTools telemetry, and mutate the exact same UI state.
-
-### 2. Deterministic TDD as Machine-Readable Specification (SDD)
-Coding agents excel when given exact, executable boundary specifications rather than verbose natural language instructions. `commanderTest` serves as an unambiguous Spec-Driven Development (SDD) contract:
-
-```dart
-// Hand this contract to your AI coding agent:
-commanderTest<ShopCommander, ShopState, ShopEffect>(
-  'Given network failure on checkout, emits loading then error effect without clearing cart',
-  build: () => ShopCommander(paymentService: mockPaymentService),
-  seed: () => ShopState.cart(items: [itemA]),
-  act: (c) => c.dispatch(CheckoutIntent(cartId: '123')),
-  expectStates: () => [
-    ShopState.loading(),
-    ShopState.cart(items: [itemA]), // Cart preserved!
-  ],
-  expectEffects: () => [
-    ShopEffect.showError('Payment network error'),
-  ],
-);
-```
-The agent implements or refactors the corresponding `CheckoutCommand` in an autonomous Red-Green-Refactor loop with zero stream flakiness.
-
-### 3. Agent-Safe Guardrails with Undo/Redo
-When an autonomous agent performs automated multi-step actions (e.g., filtering items, updating forms, managing carts), `UndoRedoMixin` provides instant rollback capabilities. If an agent hallucinates or makes an undesirable step, both the human user and the agent supervisor can roll back the state deterministically via `UndoIntent()`.
 
 ---
 
