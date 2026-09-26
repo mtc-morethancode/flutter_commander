@@ -312,6 +312,12 @@ abstract class Commander<S, E>
     notifyListeners();
   }
 
+  /// Seeds an initial or intermediate [seedState] for testing purposes before actions execute.
+  @visibleForTesting
+  void testSeed(S seedState) {
+    restoreState(seedState);
+  }
+
   /// Emits a one-shot side effect directly through this commander's effects stream.
   @protected
   void emitSideEffect(E effect) => _handleEmitSideEffect(effect);
