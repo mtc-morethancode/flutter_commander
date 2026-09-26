@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:collection';
+import 'dart:developer' as developer;
 
 import '../core/cancellation_token.dart';
 import '../core/command.dart';
@@ -126,6 +127,16 @@ class CommandRunner<S, E> {
     final active = _activeExecutions[execKey];
     if (active != null) {
       // An execution is currently running for this key; drop this invocation immediately.
+      if (Commander.enableTimelineTracing) {
+        developer.postEvent(
+          'flutter_commander:intent_dropped',
+          <String, Object?>{
+            'command': command.runtimeType.toString(),
+            'intent': intent.runtimeType.toString(),
+            'policy': ExecutionPolicy.drop.name,
+          },
+        );
+      }
       return null;
     }
 
@@ -154,6 +165,15 @@ class CommandRunner<S, E> {
     // 1. Cancel previous running token for this key
     final previousToken = _activeTokens[execKey];
     if (previousToken != null && !previousToken.isCancelled) {
+      if (Commander.enableTimelineTracing) {
+        developer.postEvent(
+          'flutter_commander:command_restarted',
+          <String, Object?>{
+            'command': command.runtimeType.toString(),
+            'intent': intent.runtimeType.toString(),
+          },
+        );
+      }
       previousToken.cancel();
     }
 
@@ -243,6 +263,21 @@ class CommandRunner<S, E> {
     CommandIntent intent,
     CancellationToken token,
   ) {
+    developer.TimelineTask? timelineTask;
+    if (Commander.enableTimelineTracing) {
+      final concurrencyKey = _getConcurrencyKey(command, intent);
+      timelineTask = developer.TimelineTask()
+        ..start(
+          'Command: ${command.runtimeType}',
+          arguments: <String, String>{
+            'intent': intent.runtimeType.toString(),
+            'policy': command.policy.name,
+            if (concurrencyKey != null)
+              'concurrencyKey': concurrencyKey.toString(),
+          },
+        );
+    }
+
     final hasObserver = Commander.observer != null;
     final hasInterceptors = _interceptors.isNotEmpty;
 
@@ -271,6 +306,9 @@ class CommandRunner<S, E> {
         return result.then(
           (_) {
             _inFlightTokens.remove(token);
+            timelineTask?.finish(
+              arguments: const <String, String>{'status': 'completed'},
+            );
             if (hasObserver) {
               Commander.observer!.onAfterExecute(_commander, command, intent);
             }
@@ -284,6 +322,18 @@ class CommandRunner<S, E> {
           },
           onError: (Object error, StackTrace stackTrace) {
             _inFlightTokens.remove(token);
+            if (error is CancellationException) {
+              timelineTask?.finish(
+                arguments: const <String, String>{'status': 'cancelled'},
+              );
+            } else {
+              timelineTask?.finish(
+                arguments: <String, String>{
+                  'status': 'error',
+                  'error': error.toString(),
+                },
+              );
+            }
             try {
               if (error is! CancellationException) {
                 _reportError(
@@ -311,6 +361,9 @@ class CommandRunner<S, E> {
         );
       } else {
         // Synchronous completion
+        timelineTask?.finish(
+          arguments: const <String, String>{'status': 'completed'},
+        );
         if (hasObserver) {
           Commander.observer!.onAfterExecute(_commander, command, intent);
         }

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:collection';
+import 'dart:developer' as developer;
 
 import 'package:flutter/foundation.dart';
 
@@ -56,6 +57,13 @@ abstract class Commander<S, E>
   /// This helps catch in-place mutation bugs (e.g. `state.items.add(x); return state;`)
   /// which cause state updates to be skipped.
   static bool debugWarnOnIdenticalState = true;
+
+  /// Whether to trace command executions, state mutations, and side-effects
+  /// to the Dart VM Timeline and emit DevTools extension events.
+  ///
+  /// Defaults to `true` in debug and profile modes (`!kReleaseMode`), and
+  /// `false` in production release builds for zero runtime overhead.
+  static bool enableTimelineTracing = !kReleaseMode;
 
   static const int _maxPendingEffectsBuffer = 32;
   final Queue<E> _unhandledEffectsBuffer = Queue<E>();
@@ -252,7 +260,26 @@ abstract class Commander<S, E>
       return;
     }
 
-    _state = newState;
+    if (enableTimelineTracing) {
+      developer.Timeline.timeSync(
+        'Commander: StateUpdate ($runtimeType)',
+        () {
+          _state = newState;
+        },
+        arguments: <String, String>{
+          'commander': runtimeType.toString(),
+          'oldState': oldState.toString(),
+          'newState': newState.toString(),
+        },
+      );
+      developer.postEvent('flutter_commander:state_changed', <String, Object?>{
+        'commander': runtimeType.toString(),
+        'oldState': oldState.toString(),
+        'newState': newState.toString(),
+      });
+    } else {
+      _state = newState;
+    }
 
     if (Commander.observer != null) {
       Commander.observer!.onStateChanged(this, oldState, newState);
@@ -334,6 +361,21 @@ abstract class Commander<S, E>
           _interceptors[i].onEffectEmitted(effect);
         } catch (_) {}
       }
+    }
+
+    if (enableTimelineTracing) {
+      developer.Timeline.timeSync(
+        'Commander: EmitEffect ($runtimeType)',
+        () {},
+        arguments: <String, String>{
+          'commander': runtimeType.toString(),
+          'effect': effect.toString(),
+        },
+      );
+      developer.postEvent('flutter_commander:effect_emitted', <String, Object?>{
+        'commander': runtimeType.toString(),
+        'effect': effect.toString(),
+      });
     }
 
     if (_effectsController.hasListener) {
