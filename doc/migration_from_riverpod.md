@@ -42,9 +42,8 @@ Follow these strict migration rules:
    - Replace `ref.watch(provider.select((s) => s.slice))` with `context.select(([Feature]Commander c) => c.state.slice)` or `CommanderSelector`.
 
 5. TESTING:
-   - Replace `ProviderContainer` mocks with `TestCommandScope<State, Effect>`.
-   - Execute commands directly: `await command.execute(testScope, intent)`.
-   - Assert with synchronous expectations: `expect(testScope.states, [...])` and `expect(testScope.effects, [...])`.
+   - For orchestrator tests: use `commanderTest<Commander, State, Effect>` from `package:flutter_commander/testing.dart` (declarative states, side effects, seeding, and auto-disposal without ProviderContainer overrides).
+   - For atomic command tests: use `TestCommandScope<State, Effect>` to execute commands directly: `await command.execute(testScope, intent)` with synchronous assertions.
 ```
 
 ---
@@ -59,7 +58,7 @@ Follow these strict migration rules:
    * [Step 4: The Commander Orchestrator](#step-4-the-commander-orchestrator)
    * [Step 5: UI Migration (`ConsumerWidget` ➔ `CommanderView`)](#step-5-ui-migration-consumerwidget--commanderview)
 4. [Solving Concurrency & Ephemeral Events without Workarounds](#solving-concurrency--ephemeral-events-without-workarounds)
-5. [Testing: `ProviderContainer` ➔ `TestCommandScope`](#testing-providercontainer--testcommandscope)
+5. [Testing: `ProviderContainer` ➔ `commanderTest` & `TestCommandScope`](#testing-providercontainer--commandertest--testcommandscope)
 6. [Migration Checklist](#migration-checklist)
 
 ---
@@ -92,7 +91,7 @@ Riverpod is a popular reactive dependency and state management library, but deve
 | `ref.watch(provider.select(...))` | `CommanderSelector` / `context.select` | Targeted rebuilds based on value equality (`==`). |
 | `ref.listen(provider, (prev, next) => ...)` | `CommanderView.onEffect` or `CommanderListener` | Listens to **real one-shot events**, avoiding awkward state diffing to show SnackBars. |
 | Manual cancellation (`CancelToken`) | `scope.cancellationToken` + `ExecutionPolicy.restart` | Cooperative cancellation handled declaratively by the framework. |
-| `ProviderContainer` testing | `TestCommandScope` | Fast, deterministic unit tests without container overrides. |
+| `ProviderContainer` testing | `commanderTest` / `TestCommandScope` | Fast, deterministic testing (declarative orchestrator suite or isolated command units) without container overrides. |
 
 ---
 
@@ -321,9 +320,12 @@ class CartPage extends CommanderView<CartCommander, CartState, CartEffect> {
 
 ---
 
-## Testing: `ProviderContainer` ➔ `TestCommandScope`
+## Testing: `ProviderContainer` ➔ `commanderTest` & `TestCommandScope`
 
-Testing a Riverpod notifier requires configuring a `ProviderContainer` with overrides and awaiting asynchronous microtasks. In `flutter_commander`, command logic is tested in isolation with **zero mock overhead**:
+Testing in Riverpod requires setting up a `ProviderContainer` with overrides, managing its lifecycle, and awaiting microtasks. In `flutter_commander`, you have two clean alternatives:
+
+### Option A: `commanderTest` (Declarative Orchestrator Testing)
+Test the entire `Commander` without `ProviderContainer` overrides:
 
 ```dart
 // ❌ BEFORE (Riverpod: ProviderContainer setup & overrides)
@@ -340,7 +342,28 @@ test('checkout updates state and clears cart', () async {
   expect(container.read(cartNotifierProvider).items, isEmpty);
 });
 
-// ✅ AFTER (Commander: Pure synchronous & isolated testing)
+// ✅ AFTER (Commander: Zero ProviderContainer, declarative states & effects)
+import 'package:flutter_commander/testing.dart';
+
+commanderTest<CartCommander, CartState, CartEffect>(
+  'checkout updates state, clears cart and emits confirmation',
+  build: () => CartCommander(MockPaymentService()),
+  seed: () => const CartState(items: ['MacBook Pro']),
+  act: (commander) => commander.dispatch(const CheckoutIntent()),
+  expectStates: () => [
+    const CartState(items: ['MacBook Pro'], isCheckingOut: true),
+    const CartState(items: [], isCheckingOut: false),
+  ],
+  expectEffects: () => [
+    const OrderSuccessEffect('ORD-123'),
+  ],
+);
+```
+
+### Option B: `TestCommandScope` (Atomic Command Testing)
+Test individual `Command` units in isolation with **zero mock overhead**:
+
+```dart
 test('CheckoutCommand processes payment and emits success effect', () async {
   final command = CheckoutCommand(MockPaymentService());
   final testScope = TestCommandScope<CartState, CartEffect>(
@@ -369,4 +392,4 @@ test('CheckoutCommand processes payment and emits success effect', () async {
 - [ ] **Separate One-Shot Effects**: Move SnackBars, toasts, and navigation from state variables to sealed `SideEffect` classes.
 - [ ] **Adopt `ExecutionPolicy`**: Replace manual double-tap flags with `ExecutionPolicy.drop` and search debounce timers with `ExecutionPolicy.restart`.
 - [ ] **Replace `ConsumerWidget` with `CommanderView`**: Remove `WidgetRef ref` parameters and implement `build(context, state)` and `onEffect(context, effect)`.
-- [ ] **Migrate Tests to `TestCommandScope`**: Test commands directly without setting up container overrides.
+- [ ] **Migrate Tests to `commanderTest` & `TestCommandScope`**: Replace `ProviderContainer` boilerplate with declarative `commanderTest` or atomic `TestCommandScope`.

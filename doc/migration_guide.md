@@ -9,7 +9,7 @@ Welcome! If you are migrating an existing Flutter project from another state man
 ## 🎯 Select Your Migration Guide
 
 ### 📦 [Migrating from BLoC (`flutter_bloc`) ➔ `flutter_commander`](migration_from_bloc.md)
-*Deconstruct monolithic god-blocs, replace `bloc_concurrency` (RxDart) with native `ExecutionPolicy`, eliminate ghost side-effects, replace nested `BlocConsumer`/`BlocListener`/`BlocBuilder` with `CommanderView`, and adopt synchronous `TestCommandScope`.*
+*Deconstruct monolithic god-blocs, replace `bloc_concurrency` (RxDart) with native `ExecutionPolicy`, eliminate ghost side-effects, replace nested `BlocConsumer`/`BlocListener`/`BlocBuilder` with `CommanderView`, and adopt declarative `commanderTest` and synchronous `TestCommandScope`.*
 
 ### 🌊 [Migrating from Riverpod (`flutter_riverpod`) ➔ `flutter_commander`](migration_from_riverpod.md)
 *Transition from global provider declarations to scoped lifecycles (`CommanderScope`), gain first-class one-shot side-effect streams (`SideEffect`), replace `ConsumerWidget` and `WidgetRef` boilerplate with `CommanderView` and `context.select`, and simplify asynchronous testing.*

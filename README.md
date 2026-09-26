@@ -23,7 +23,7 @@ flutter pub add flutter_commander
 * 🔔 **First-Class One-Shot SideEffects:** Handle dialogs, SnackBars, and navigation via a dedicated broadcast channel with automatic cold-start FIFO buffering and mounted-context verification.
 * 🧼 **Ergonomic UI with `CommanderView`:** Say goodbye to nested builder pyramids. Render state, listen to effects, and filter rebuilds in a single clean widget.
 * 🧩 **Composable Mixins:** Add zero-flicker state persistence (`SavedStateMixin`) and comprehensive undo/redo time-travel (`UndoRedoMixin`) via idiomatic Dart 3 mixins.
-* 🧪 **Deterministic, Streamless Testing:** Test business logic synchronously with `TestCommandScope`—no timers, stream subscriptions, or widget pumps required.
+* 🧪 **Two-Tier Testing (Declarative & Atomic):** Test entire orchestrators with `commanderTest` (declarative states, side-effects, seeding, and auto-disposal) or test isolated commands with `TestCommandScope`—100% deterministic and streamless.
 * 🚫 **Zero Code Generation:** 100% pure Dart 3. Instant compilation, crystal-clear stack traces, and maximum developer velocity.
 
 ---

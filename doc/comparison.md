@@ -16,7 +16,7 @@ This document provides an objective, side-by-side technical comparison between *
 | **State Persistence** | Agnostic **`SavedStateMixin`** (zero-flicker sync + background async restoration) | Coupled to `hydrated_bloc` (requires subclassing `HydratedBloc`) | Manual notifier state serialization or custom caches |
 | **Time-Travel (Undo/Redo)** | Composable **`UndoRedoMixin`** (combine with any mixin, intent-driven or direct) | `replay_bloc` (rigid base class inheritance) | Custom state history stack implementations |
 | **Code Generation** | ❌ **None** (100% Pure Dart 3) | ❌ Optional | ⚠️ Recommended (`riverpod_generator`) |
-| **Unit Testing DX** | **Deterministic & synchronous** with `TestCommandScope` (zero streams, zero pumps) | `blocTest` (asynchronous, relies on stream delay timings) | `ProviderContainer` with overrides and asynchronous mocks |
+| **Unit Testing DX** | **Two-tier DX**: Declarative `commanderTest` (1:1 drop-in for `blocTest` with native effects & seeding) + atomic `TestCommandScope` (zero streams, zero pumps) | `blocTest` (asynchronous, relies on stream delay timings) | `ProviderContainer` with overrides and asynchronous mocks |
 | **Dependency Injection** | Native widget-tree scoping (`CommanderScope`) or DI container agnostic | Native widget-tree scoping (`BlocProvider`) or DI agnostic | Global provider declarations with `ProviderScope` |
 
 ---

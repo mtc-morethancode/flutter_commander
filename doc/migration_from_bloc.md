@@ -43,9 +43,8 @@ Follow these strict migration rules:
    - For granular sub-tree rebuilding, use `CommanderSelector` or `context.select(([Feature]Commander c) => c.state.slice)`.
 
 5. TESTING:
-   - Replace `blocTest` stream mocks with `TestCommandScope<State, Effect>`.
-   - Execute commands directly: `await command.execute(testScope, intent)`.
-   - Assert with synchronous expectations: `expect(testScope.states, [...])` and `expect(testScope.effects, [...])`.
+   - For orchestrator tests: use `commanderTest<Commander, State, Effect>` from `package:flutter_commander/testing.dart` (1:1 drop-in for `blocTest` with native side effects, error assertions, and state seeding).
+   - For atomic command tests: use `TestCommandScope<State, Effect>`. Execute commands directly with `await command.execute(testScope, intent)` and assert on `testScope.states` and `testScope.effects`.
 ```
 
 ---
@@ -60,7 +59,7 @@ Follow these strict migration rules:
    * [Step 4: Orchestrate with Commander](#step-4-orchestrate-with-commander)
    * [Step 5: UI Layer Migration (`BlocConsumer` ➔ `CommanderView`)](#step-5-ui-layer-migration-blocconsumer--commanderview)
 4. [Replacing `bloc_concurrency` (RxDart) with Native `ExecutionPolicy`](#replacing-bloc_concurrency-rxdart-with-native-executionpolicy)
-5. [Testing: `blocTest` ➔ `TestCommandScope`](#testing-bloctest--testcommandscope)
+5. [Testing: `blocTest` ➔ `commanderTest` & `TestCommandScope`](#testing-bloctest--commandertest--testcommandscope)
 6. [Migration Checklist](#migration-checklist)
 
 ---
@@ -446,4 +445,4 @@ test('CheckoutCommand processes payment and emits success effect', () async {
 - [ ] **Replace RxDart Transformers**: Use `ExecutionPolicy.drop` for buttons/payments, `ExecutionPolicy.restart` + `debounce` for search.
 - [ ] **Migrate UI to `CommanderView`**: Replace nested `BlocConsumer` / `BlocListener` / `BlocBuilder` with `CommanderView`.
 - [ ] **Replace `buildWhen` with `shouldRebuild`**: If you used `buildWhen` in `BlocBuilder`, override `shouldRebuild` in `CommanderView`.
-- [ ] **Switch Tests to `TestCommandScope`**: Replace `blocTest` with fast, deterministic tests using `TestCommandScope`.
+- [ ] **Migrate Tests to `commanderTest` & `TestCommandScope`**: Replace `blocTest` with `commanderTest` for orchestrator-level tests and `TestCommandScope` for isolated atomic command testing.
