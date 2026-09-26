@@ -99,7 +99,7 @@ While BLoC popularized unidirectional data flow in Flutter, enterprise productio
 | `BlocConsumer` / Nested Listener+Builder | `CommanderView` | **Zero nesting**: Provides `state`, `onEffect`, and `shouldRebuild` in one unified widget. |
 | `buildWhen: (prev, curr) => ...` | `shouldRebuild: (prev, curr) => ...` | Granular rebuild filtering without boilerplate. |
 | `context.read<B>().add(Event())` | `context.dispatch<C>(Intent())` | Fire-and-forget intention dispatch. |
-| `blocTest` | `TestCommandScope` | **Synchronous & deterministic testing** without async stream delays, fake timers, or pump delays. |
+| `blocTest` | `commanderTest` / `TestCommandScope` | **Direct 1:1 drop-in harness** (with native side-effects, error assertions, seeding) + atomic synchronous command test scope. |
 
 ---
 
@@ -372,24 +372,48 @@ In BLoC, concurrency requires the external `bloc_concurrency` package and RxDart
 
 ---
 
-## Testing: `blocTest` ➔ `TestCommandScope`
+## Testing: `blocTest` ➔ `commanderTest` & `TestCommandScope`
 
-In BLoC, unit testing requires `blocTest`, which runs asynchronously against stream emissions and often requires flaky timer delays. In `flutter_commander`, commands are tested **synchronously, deterministically, and with zero stream mocking**:
+In `flutter_commander`, you have two world-class options for testing:
+
+### Option A: `commanderTest` (1:1 Declarative Drop-In for `blocTest`)
+If you love `blocTest`, `commanderTest` provides the exact same high-level DX—plus first-class support for side-effects, error assertions, seeding, and auto-disposal:
 
 ```dart
-// ❌ BEFORE (BLoC: Flaky stream delays & stream expectations)
+// ❌ BEFORE (BLoC: Flaky stream delays & state-only expectations)
 blocTest<CartBloc, CartState>(
   'emits isCheckingOut and success when checkout succeeds',
-  build: () => CartBloc(MockPaymentService(), MockCatalogService()),
+  build: () => CartBloc(MockPaymentService()),
   act: (bloc) => bloc.add(CheckoutEvent()),
-  wait: const Duration(milliseconds: 100), // Flaky timer wait
+  wait: const Duration(milliseconds: 100),
   expect: () => [
     CartState(isCheckingOut: true),
-    CartState(isCheckingOut: false, orderSuccess: true),
+    CartState(isCheckingOut: false),
   ],
 );
 
-// ✅ AFTER (Commander: Zero async wait, 100% deterministic)
+// ✅ AFTER (Commander: Native side-effect testing & declarative ergonomics)
+import 'package:flutter_commander/testing.dart';
+
+commanderTest<CartCommander, CartState, CartEffect>(
+  'emits isCheckingOut and OrderConfirmedEffect when checkout succeeds',
+  build: () => CartCommander(MockPaymentService()),
+  seed: () => const CartState(items: ['MacBook Pro']),
+  act: (commander) => commander.dispatch(const CheckoutIntent()),
+  expectStates: () => [
+    const CartState(items: ['MacBook Pro'], isCheckingOut: true),
+    const CartState(items: [], isCheckingOut: false),
+  ],
+  expectEffects: () => [
+    const OrderConfirmedEffect('ORD-123'),
+  ],
+);
+```
+
+### Option B: `TestCommandScope` (Atomic Command Testing)
+For testing individual `Command` units in complete isolation **without streams, timers, or pump delays**:
+
+```dart
 test('CheckoutCommand processes payment and emits success effect', () async {
   final command = CheckoutCommand(MockPaymentService());
   final testScope = TestCommandScope<CartState, CartEffect>(
@@ -407,7 +431,7 @@ test('CheckoutCommand processes payment and emits success effect', () async {
 
   // 2. Verify emitted one-shot side-effects:
   expect(testScope.effects, [
-    const OrderSuccessEffect('ORD-123'),
+    const OrderConfirmedEffect('ORD-123'),
   ]);
 });
 ```

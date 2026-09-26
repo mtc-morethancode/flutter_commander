@@ -557,9 +557,39 @@ class CartCommander extends Commander<CartState, CartEffect>
 
 ---
 
-### 6. Atomic Unit Testing with `TestCommandScope`
+### 6. Declarative & Atomic Testing (`commanderTest` & `TestCommandScope`)
 
-Unit testing in `flutter_commander` is deterministic, synchronous, and requires **zero widget pumping, zero streams, and zero timers**:
+`flutter_commander` provides a two-tier testing suite designed for unmatched developer velocity:
+
+#### A. Orchestrator Testing (`commanderTest`)
+For declarative, end-to-end unit testing of `Commander` instances with state sequences, side-effects, seeding, debounce waits, and mock verification (available from `package:flutter_commander/testing.dart`):
+
+```dart
+import 'package:flutter_commander/testing.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+void main() {
+  commanderTest<CartCommander, CartState, CartEffect>(
+    'emits checkout state and OrderConfirmedEffect on checkout',
+    build: () => CartCommander(mockPaymentService),
+    seed: () => const CartState(items: ['MacBook Pro']),
+    act: (commander) => commander.dispatch(const CheckoutIntent()),
+    expectStates: () => [
+      const CartState(items: ['MacBook Pro'], isCheckingOut: true),
+      const CartState(items: [], isCheckingOut: false),
+    ],
+    expectEffects: () => [
+      const OrderConfirmedEffect('ORD-777'),
+    ],
+    verify: (commander) {
+      verify(() => mockPaymentService.pay(any())).called(1);
+    },
+  );
+}
+```
+
+#### B. Atomic Command Testing (`TestCommandScope`)
+For isolated, widget-free, stream-free testing of individual `Command` units with zero timers and synchronous execution:
 
 ```dart
 test('CheckoutCommand processes payment, clears cart and emits confirmation', () async {
