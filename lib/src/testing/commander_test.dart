@@ -1,9 +1,8 @@
-// ignore_for_file: depend_on_referenced_packages
-
 import 'dart:async';
 
-import 'package:flutter_test/flutter_test.dart' as test_package;
+import 'package:matcher/expect.dart' as test_package;
 import 'package:meta/meta.dart';
+import 'package:test_api/scaffolding.dart' as test_package;
 
 import '../commander/commander.dart';
 
