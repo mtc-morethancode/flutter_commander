@@ -1,0 +1,40 @@
+---
+title: flutter_commander 🚀
+description: Enterprise MVI + Command Pattern architecture for Flutter.
+template: splash
+hero:
+  tagline: Enterprise MVI + Command Pattern architecture for Flutter with declarative concurrency, first-class side effects, and zero code generation.
+  actions:
+    - text: Quickstart
+      link: /flutter_commander/getting-started/quickstart/
+      icon: right-arrow
+    - text: GitHub Repository
+      link: https://github.com/crab-team/flutter_commander
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## Why flutter_commander?
+
+<CardGrid stagger>
+	<Card title="Atomic Commands" icon="star">
+		Break complex domains into isolated, single-responsibility `Command` classes. Each action owns its logic, dependencies, and execution rules.
+	</Card>
+	<Card title="Declarative Concurrency" icon="rocket">
+		Solve race conditions, double-tap prevention, and debounced type-ahead searches natively using `ExecutionPolicy` with zero stream boilerplate.
+	</Card>
+	<Card title="First-Class SideEffects" icon="information">
+		Handle dialogs, SnackBars, and navigation via a dedicated broadcast channel with automatic cold-start FIFO buffering and mounted-context verification.
+	</Card>
+	<Card title="Ergonomic UI (CommanderView)" icon="pencil">
+		Say goodbye to nested builder pyramids. Render state, listen to effects, and filter rebuilds in a single clean widget.
+	</Card>
+	<Card title="Two-Tier Testing (TDD/SDD)" icon="approve-check">
+		Test entire orchestrators with `commanderTest` or test isolated commands with `TestCommandScope`—100% deterministic and streamless.
+	</Card>
+	<Card title="Zero Code Generation" icon="setting">
+		100% pure Dart 3. Instant compilation, crystal-clear stack traces, and maximum developer velocity.
+	</Card>
+</CardGrid>
