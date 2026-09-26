@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:collection';
 
 import 'package:flutter/scheduler.dart';
@@ -92,31 +93,61 @@ class CommanderScope<C extends Commander<dynamic, dynamic>>
     return model.commander;
   }
 
-  /// Subscribes to a specific slice [R] of state [S] from commander [C].
+  /// Subscribes to a specific slice [R] from commander [C].
   ///
-  /// The calling widget will only rebuild when the value returned by [selector]
-  /// changes (using equality `!=`).
+  /// Supports zero-ceremony type inference:
+  /// ```dart
+  /// final title = CommanderScope.select(context, (AppCommander c) => c.state.title);
+  /// ```
+  /// Or with explicit type arguments:
+  /// ```dart
+  /// final title = CommanderScope.select<AppCommander, String>(context, (c) => c.state.title);
+  /// ```
   ///
   /// For optimal aspect equality caching during frequent rebuilds, supply an [aspectKey]
   /// (e.g. `aspectKey: #itemCount` or `aspectKey: 'itemCount'`).
   ///
   /// Recommendation: For isolated UI subtrees, consider using [CommanderSelector]
   /// which connects via direct local listeners without InheritedModel aspect registration.
-  static R select<C extends Commander<S, dynamic>, S, R>(
+  static R select<C extends Commander<dynamic, dynamic>, R>(
     BuildContext context,
-    R Function(S state) selector, {
+    R Function(C commander) selector, {
     Object? aspectKey,
   }) {
     // 1. Obtain commander without registering a full rebuild dependency
-    final commander = of<C>(context, listen: false) as Commander<S, dynamic>;
-    final currentValue = selector(commander.state);
+    final commander = of<C>(context, listen: false);
+    final currentValue = selector(commander);
 
-    // 2. Register fine-grained aspect dependency
-    final aspect = _SelectorAspect<S, R>(selector, aspectKey);
+    // 2. Resolve slot-based aspect key if aspectKey is null
+    final modelElement = context.getElementForInheritedWidgetOfExactType<
+        _CommanderInheritedModel<C>>() as _CommanderInheritedModelElement<C>?;
+
+    final resolvedKey =
+        aspectKey ?? modelElement?.nextSlotKey(context as Element) ?? 0;
+
+    // 3. Register fine-grained aspect dependency
+    final aspect = _SelectorAspect<C, R>(
+      selector: selector,
+      lastValue: currentValue,
+      aspectKey: resolvedKey,
+    );
     InheritedModel.inheritFrom<_CommanderInheritedModel<C>>(context,
         aspect: aspect);
 
     return currentValue;
+  }
+
+  /// Subscribes to a specific slice [R] of state [S] from commander [C] directly.
+  static R selectState<C extends Commander<S, dynamic>, S, R>(
+    BuildContext context,
+    R Function(S state) selector, {
+    Object? aspectKey,
+  }) {
+    return select<C, R>(
+      context,
+      (commander) => selector(commander.state),
+      aspectKey: aspectKey,
+    );
   }
 
   @override
@@ -220,7 +251,7 @@ class _CommanderInheritedModel<C extends Commander<dynamic, dynamic>>
     }
 
     for (final aspect in dependencies) {
-      if (aspect.hasChanged(oldWidget.state, state)) {
+      if (aspect.hasChanged(commander, oldWidget.state, state)) {
         return true;
       }
     }
@@ -234,6 +265,18 @@ class _CommanderInheritedModelElement<C extends Commander<dynamic, dynamic>>
   _CommanderInheritedModelElement(_CommanderInheritedModel<C> super.widget);
 
   final Map<Element, Set<_Aspect>> _managedDependencies = {};
+  final Map<Element, int> _elementSlotCounters = {};
+
+  Object nextSlotKey(Element dependent) {
+    final slot = _elementSlotCounters[dependent] ?? 0;
+    _elementSlotCounters[dependent] = slot + 1;
+    if (_elementSlotCounters.length == 1 && slot == 0) {
+      scheduleMicrotask(() {
+        _elementSlotCounters.clear();
+      });
+    }
+    return _SlotAspectKey(slot);
+  }
 
   @override
   void updateDependencies(Element dependent, Object? aspect) {
@@ -244,6 +287,7 @@ class _CommanderInheritedModelElement<C extends Commander<dynamic, dynamic>>
 
     if (aspect == null) {
       _managedDependencies.remove(dependent);
+      _elementSlotCounters.remove(dependent);
       setDependencies(dependent, HashSet<_Aspect>());
       return;
     }
@@ -256,7 +300,7 @@ class _CommanderInheritedModelElement<C extends Commander<dynamic, dynamic>>
     });
 
     if (aspect is _Aspect) {
-      // Replace existing equivalent aspect so the function closure is refreshed
+      // Replace existing equivalent aspect so the function closure and cached value are refreshed
       // without accumulating duplicate aspects in memory across widget rebuilds.
       managed.remove(aspect);
       managed.add(aspect);
@@ -266,51 +310,69 @@ class _CommanderInheritedModelElement<C extends Commander<dynamic, dynamic>>
   @override
   void removeDependent(Element dependent) {
     _managedDependencies.remove(dependent);
+    _elementSlotCounters.remove(dependent);
     super.removeDependent(dependent);
   }
 }
 
 abstract class _Aspect {
-  bool hasChanged(dynamic oldState, dynamic newState);
+  bool hasChanged(dynamic commander, dynamic oldState, dynamic newState);
 }
 
 class _CommanderInstanceAspect implements _Aspect {
   const _CommanderInstanceAspect();
 
   @override
-  bool hasChanged(dynamic oldState, dynamic newState) => false;
+  bool hasChanged(dynamic commander, dynamic oldState, dynamic newState) =>
+      false;
 }
 
-class _SelectorAspect<S, R> implements _Aspect {
-  final R Function(S state) selector;
-  final Object? aspectKey;
-
-  _SelectorAspect(this.selector, [this.aspectKey]);
+class _SlotAspectKey {
+  final int slot;
+  const _SlotAspectKey(this.slot);
 
   @override
-  bool hasChanged(dynamic oldState, dynamic newState) {
-    if (oldState is! S || newState is! S) return true;
-    final oldValue = selector(oldState);
-    final newValue = selector(newState);
-    return !identical(oldValue, newValue) && oldValue != newValue;
-  }
+  bool operator ==(Object other) =>
+      identical(this, other) || other is _SlotAspectKey && slot == other.slot;
 
   @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    if (other is! _SelectorAspect<S, R>) return false;
-    if (aspectKey != null && other.aspectKey != null) {
-      return aspectKey == other.aspectKey;
-    }
-    // If aspectKey is null on both, compare equality based on state type S and slice type R.
-    // This allows stable aspect caching across builds without leaking closures in memory.
-    if (aspectKey == null && other.aspectKey == null) {
+  int get hashCode => slot.hashCode;
+
+  @override
+  String toString() => '_SlotAspectKey($slot)';
+}
+
+class _SelectorAspect<C extends Commander<dynamic, dynamic>, R>
+    implements _Aspect {
+  final R Function(C commander) selector;
+  R lastValue;
+  final Object aspectKey;
+
+  _SelectorAspect({
+    required this.selector,
+    required this.lastValue,
+    required this.aspectKey,
+  });
+
+  @override
+  bool hasChanged(dynamic commander, dynamic oldState, dynamic newState) {
+    if (commander is! C) return true;
+    final newValue = selector(commander);
+    final changed = !identical(lastValue, newValue) && lastValue != newValue;
+    if (changed) {
+      lastValue = newValue;
       return true;
     }
     return false;
   }
 
   @override
-  int get hashCode =>
-      aspectKey != null ? aspectKey.hashCode : Object.hash(S, R);
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! _SelectorAspect<C, R>) return false;
+    return aspectKey == other.aspectKey;
+  }
+
+  @override
+  int get hashCode => Object.hash(C, R, aspectKey);
 }

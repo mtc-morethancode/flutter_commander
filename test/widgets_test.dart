@@ -427,9 +427,7 @@ void main() {
                   Builder(
                     builder: (context) {
                       final title =
-                          context.select<AppCommander, AppState, String>(
-                        (state) => state.title,
-                      );
+                          context.select((AppCommander c) => c.state.title);
                       return Text('Title: $title');
                     },
                   ),

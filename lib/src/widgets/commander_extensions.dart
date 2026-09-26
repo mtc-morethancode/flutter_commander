@@ -28,22 +28,37 @@ extension CommanderBuildContextX on BuildContext {
     return commander<C>().dispatch(intent);
   }
 
-  /// Subscribes this widget to a selected slice [R] of state [S] from commander [C].
+  /// Subscribes this widget to a selected slice [R] from commander [C].
   ///
-  /// Only rebuilds this widget when the returned [R] value changes.
-  /// An optional [aspectKey] can be provided for stable aspect equality caching.
+  /// Supports zero-ceremony type inference:
+  /// ```dart
+  /// final title = context.select((AppCommander c) => c.state.title);
+  /// ```
+  /// Or with explicit type arguments:
+  /// ```dart
+  /// final title = context.select<AppCommander, String>((c) => c.state.title);
+  /// ```
+  R select<C extends Commander<dynamic, dynamic>, R>(
+    R Function(C commander) selector, {
+    Object? aspectKey,
+  }) {
+    return CommanderScope.select<C, R>(this, selector, aspectKey: aspectKey);
+  }
+
+  /// Subscribes this widget to a selected slice [R] of state [S] from commander [C].
   ///
   /// Example:
   /// ```dart
-  /// final isLoading = context.select<OrderCommander, OrderState, bool>(
+  /// final isLoading = context.selectState<OrderCommander, OrderState, bool>(
   ///   (state) => state.isLoading,
   ///   aspectKey: #isLoading,
   /// );
   /// ```
-  R select<C extends Commander<S, dynamic>, S, R>(
+  R selectState<C extends Commander<S, dynamic>, S, R>(
     R Function(S state) selector, {
     Object? aspectKey,
   }) {
-    return CommanderScope.select<C, S, R>(this, selector, aspectKey: aspectKey);
+    return CommanderScope.selectState<C, S, R>(this, selector,
+        aspectKey: aspectKey);
   }
 }

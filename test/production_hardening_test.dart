@@ -76,7 +76,7 @@ class _WidgetDispatchingInInitStateState
 
   @override
   Widget build(BuildContext context) {
-    final count = context.select<HardeningCommander, HardeningState, int>(
+    final count = context.selectState<HardeningCommander, HardeningState, int>(
       (s) => s.count,
     );
     return Text('Count in initState: $count');
@@ -97,7 +97,7 @@ class SelectorWidgetWithoutAspectKey extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     onBuild();
-    final count = context.select<HardeningCommander, HardeningState, int>(
+    final count = context.selectState<HardeningCommander, HardeningState, int>(
       (s) => s.count,
     );
     return Text('Count: $count (parentTick: $parentTick)');
@@ -222,8 +222,9 @@ void main() {
             w.runtimeType.toString().contains('_CommanderInheritedModel')),
       ) as InheritedModelElement;
 
-      // ignore: invalid_use_of_protected_member
-      final dependencies = inheritedElement.getDependencies(childElement) as Set?;
+      final dependencies =
+          // ignore: invalid_use_of_protected_member
+          inheritedElement.getDependencies(childElement) as Set?;
 
       // Must have exactly 1 dependency entry, not 11!
       expect(dependencies, isNotNull);

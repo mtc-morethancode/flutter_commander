@@ -506,7 +506,7 @@ void main() {
           child: Builder(
             builder: (context) {
               buildCount++;
-              final val = context.select<CommanderImpl, ItemState, String>(
+              final val = context.selectState<CommanderImpl, ItemState, String>(
                 (s) => s.items['key'] ?? '',
                 aspectKey: #itemKey,
               );

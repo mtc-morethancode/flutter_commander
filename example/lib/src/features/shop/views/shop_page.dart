@@ -3,7 +3,6 @@ import 'package:flutter_commander/flutter_commander.dart';
 
 import '../commander/shop_commander.dart';
 import '../commander/shop_effect.dart';
-import '../commander/shop_state.dart';
 import 'widgets/analytics_section.dart';
 import 'widgets/checkout_section.dart';
 import 'widgets/search_section.dart';
@@ -55,8 +54,8 @@ class ShopPage extends StatelessWidget {
             Builder(
               builder: (context) {
                 // Sliced subscription via context.select: rebuilds ONLY when count changes
-                final cartCount = context.select<ShopCommander, ShopState, int>(
-                  (s) => s.cartItemCount,
+                final cartCount = context.select(
+                  (ShopCommander c) => c.state.cartItemCount,
                 );
                 return Padding(
                   padding: const EdgeInsets.only(right: 16.0),
