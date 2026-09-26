@@ -666,6 +666,13 @@ class AppStoreObserver extends CommanderObserver {
 }
 ```
 
+#### Native Flutter DevTools Timeline Profiling
+
+In debug and profile modes (`!kReleaseMode`), `flutter_commander` automatically emits native `dart:developer.TimelineTask` tracks and VM Service extension events:
+* **Performance Timeline**: View exact execution bars in Flutter DevTools with policy, intent type, and concurrency key arguments.
+* **Lifecycle Events**: Traces `intent_dropped` on duplicate drop-policy calls and `command_restarted` on cancellations.
+* **Zero Release Overhead**: Timeline calls are guarded by `Commander.enableTimelineTracing = !kReleaseMode` and completely bypassed in release builds.
+
 ---
 
 ### 8. Composable Time-Travel & Undo / Redo (`UndoRedoMixin`)
