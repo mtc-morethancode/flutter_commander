@@ -1,0 +1,28 @@
+# Pub.dev publication ignore file
+# When this file exists, flutter pub publish uses ONLY this file instead of .gitignore.
+
+# Documentation website (tracked in git for GH Pages, excluded from pub.dev)
+website/
+
+# CI / GitHub workflows
+.github/
+
+# Build and test artifacts
+build/
+coverage/
+.dart_tool/
+.pub/
+.pub-cache/
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# Example app artifacts
+example/build/
+example/.dart_tool/
+
+# IDE and OS
+.DS_Store
+.idea/
+.vscode/
+*.iml

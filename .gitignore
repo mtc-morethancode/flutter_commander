@@ -34,3 +34,8 @@ coverage/
 # Avoid committing pubspec.lock for libraries
 pubspec.lock
 example/pubspec.lock
+
+# Documentation website build and dependency directories
+website/node_modules/
+website/dist/
+website/.astro/
