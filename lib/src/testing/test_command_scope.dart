@@ -89,6 +89,8 @@ class TestCommandScope<S, E> implements CommandScope<S, E> {
     void Function()? onDone,
     bool? cancelOnError,
   }) {
+    late final void Function() detach;
+
     final subscription = stream.listen(
       (data) {
         if (!cancellationToken.isCancelled && onData != null) {
@@ -107,6 +109,7 @@ class TestCommandScope<S, E> implements CommandScope<S, E> {
         }
       },
       onDone: () {
+        detach();
         if (!cancellationToken.isCancelled && onDone != null) {
           onDone();
         }
@@ -114,7 +117,7 @@ class TestCommandScope<S, E> implements CommandScope<S, E> {
       cancelOnError: cancelOnError,
     );
 
-    cancellationToken.attach(() {
+    detach = cancellationToken.attach(() {
       unawaited(subscription.cancel());
     });
 
@@ -138,7 +141,11 @@ class TestCommandScope<S, E> implements CommandScope<S, E> {
   @override
   void updateState(S Function(S current) reducer) {
     if (cancellationToken.isCancelled) return;
-    _currentState = reducer(_currentState);
+    final newState = reducer(_currentState);
+    if (identical(_currentState, newState) || _currentState == newState) {
+      return;
+    }
+    _currentState = newState;
     _recordedStates.add(_currentState);
   }
 

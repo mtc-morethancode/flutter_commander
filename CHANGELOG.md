@@ -21,7 +21,12 @@
   * `UndoRedoMixin`: Full time-travel history navigation (undo, redo, clear history) with intent-driven commands and automatic persistence synchronization.
 * **Observability & DevTools Profiling**:
   * `CommanderObserver` & `LoggingCommandInterceptor` for structured lifecycle and telemetry logging.
+  * Enterprise crash isolation: Uncaught exceptions in third-party observers (Sentry, Crashlytics) are safely contained without interrupting command execution, state updates, or widget lifecycles.
   * Native **Flutter DevTools Timeline Profiling** (`TimelineTask`, `postEvent`) for visual execution bars and VM Service event tracking (zero overhead in release builds).
+* **Production Hardening & Concurrency Safety**:
+  * Complete concurrency token cleanup guaranteeing zero memory or token leaks if a command throws synchronously under `DROP` or `RESTART` policies.
+  * Async error symmetry in `Commander.dispatch`: Synchronous and asynchronous command failures return uniform catchable Futures with unhandled zone error suppression.
+  * `CommandScope` cooperative cancellation utilities: `isCancelled`, `throwIfCancelled()`, `withCancellation()`, `runCancellable()`, `sleep()`, `listen()`, `forEach()`, and `attach()`.
 * **Widgets & Flutter Integration**:
   * `CommanderScope`: InheritedWidget lifecycle manager with automatic disposal and multi-selector slot isolation.
   * `CommanderView`: Unified screen base widget with reactive state access, mounted effect handling, route buffering, and rebuild filtering (`shouldRebuild`).
