@@ -4,13 +4,13 @@ import starlight from '@astrojs/starlight';
 
 // https://astro.build/config
 export default defineConfig({
-	site: 'https://crab-team.github.io',
+	site: 'https://mtc-morethancode.github.io',
 	base: '/flutter_commander',
 	integrations: [
 		starlight({
 			title: 'flutter_commander',
 			social: [
-				{ icon: 'github', label: 'GitHub', href: 'https://github.com/crab-team/flutter_commander' },
+				{ icon: 'github', label: 'GitHub', href: 'https://github.com/mtc-morethancode/flutter_commander' },
 			],
 			sidebar: [
 				{
