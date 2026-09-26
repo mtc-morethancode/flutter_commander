@@ -24,6 +24,7 @@ class SavedStateHandle {
   final SavedStateStore store;
 
   final Map<String, dynamic> _data;
+  Future<void> _writeQueue = Future<void>.value();
 
   /// Creates a [SavedStateHandle].
   ///
@@ -96,18 +97,18 @@ class SavedStateHandle {
   }
 
   void _persist() {
-    try {
-      final result = store.write(key, Map<String, dynamic>.from(_data));
-      if (result is Future) {
-        unawaited(result.catchError((Object e) {
-          debugPrint(
-              '[flutter_commander] [SavedStateHandle] write error on $key: $e');
-        }));
+    final snapshot = Map<String, dynamic>.from(_data);
+    _writeQueue = _writeQueue.then((_) async {
+      try {
+        final result = store.write(key, snapshot);
+        if (result is Future) {
+          await result;
+        }
+      } catch (e) {
+        debugPrint(
+            '[flutter_commander] [SavedStateHandle] write error on $key: $e');
       }
-    } catch (e) {
-      debugPrint(
-          '[flutter_commander] [SavedStateHandle] write error on $key: $e');
-    }
+    });
   }
 
   /// Returns an unmodifiable view of all stored key-value pairs.

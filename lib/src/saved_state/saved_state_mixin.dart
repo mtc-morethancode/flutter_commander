@@ -209,6 +209,15 @@ mixin SavedStateMixin<S, E> on Commander<S, E> {
     }
   }
 
+  @override
+  void onStateRestored(S oldState, S newState) {
+    super.onStateRestored(oldState, newState);
+    if (!_isRestoring && !isDisposed && _isRestored) {
+      _isDirty = true;
+      _schedulePersist(newState);
+    }
+  }
+
   void _schedulePersist(S state) {
     final debounce = persistDebounce;
     if (debounce != null) {
@@ -271,7 +280,10 @@ mixin SavedStateMixin<S, E> on Commander<S, E> {
 
   @override
   void dispose() {
-    _debounceTimer?.cancel();
+    if (_debounceTimer != null && _debounceTimer!.isActive) {
+      _debounceTimer!.cancel();
+      unawaited(_persist(state));
+    }
     super.dispose();
   }
 }
