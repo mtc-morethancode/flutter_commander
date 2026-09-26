@@ -36,11 +36,8 @@ class MutateLabelIntent extends CommandIntent {
 }
 
 class HardeningCommander extends Commander<HardeningState, HardeningEffect> {
-  HardeningCommander({List<CommandInterceptor>? interceptors})
-      : super(
-          const HardeningState(count: 0, label: 'initial'),
-          interceptors: interceptors,
-        ) {
+  HardeningCommander({super.interceptors})
+      : super(const HardeningState(count: 0, label: 'initial')) {
     on<SyncIncIntent>((scope, intent) {
       scope.updateState((s) => s.copyWith(count: s.count + 1));
     });
