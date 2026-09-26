@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    name: Lint, Test & Validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Verify Flutter Installation
+        run: flutter doctor -v
+
+      # --- Root Package Verification ---
+      - name: Install Root Dependencies
+        run: flutter pub get
+
+      - name: Verify Code Formatting
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Static Analysis
+        run: flutter analyze --fatal-infos
+
+      - name: Run Test Suite with Coverage
+        run: flutter test --coverage
+
+      - name: Verify pub.dev Publish Readiness
+        run: dart pub publish --dry-run
+
+      # --- Example App Verification ---
+      - name: Install Example Dependencies
+        run: |
+          cd example
+          flutter pub get
+
+      - name: Static Analysis (Example)
+        run: |
+          cd example
+          flutter analyze --fatal-infos
+
+      - name: Run Example Test Suite
+        run: |
+          cd example
+          flutter test
