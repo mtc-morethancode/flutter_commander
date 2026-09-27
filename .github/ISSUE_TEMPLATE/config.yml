@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📖 flutter_commander Documentation
+    url: https://mtc-morethancode.github.io/flutter_commander/
+    about: Read our comprehensive architecture, concurrency, and testing guides.
+  - name: 💬 Questions & Discussions
+    url: https://github.com/mtc-morethancode/flutter_commander/discussions
+    about: Ask architectural questions, share patterns, or get help with implementation.

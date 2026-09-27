@@ -1,0 +1,72 @@
+name: 🐛 Bug Report
+description: File a bug report to help us improve flutter_commander
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report an issue! Please provide as much context as possible.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is.
+      placeholder: What happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Detailed steps explaining how to reproduce the behavior.
+      placeholder: |
+        1. Create a Commander with `ExecutionPolicy.drop`...
+        2. Dispatch two rapid intents...
+        3. Observe...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: A clear and concise description of what you expected to happen.
+    validations:
+      required: true
+
+  - type: textarea
+    id: code_snippet
+    attributes:
+      label: Minimal Reproducible Code
+      description: |
+        Please provide a minimal test case or Dart snippet demonstrating the issue.
+      render: dart
+      placeholder: |
+        // Minimal code snippet or unit test reproducing the issue
+    validations:
+      required: false
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment Info
+      description: Output of `flutter doctor -v` and your `flutter_commander` version.
+      placeholder: |
+        - flutter_commander version: 1.0.0
+        - Flutter version:
+        - Dart version:
+        - Operating System:
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / Stack Traces
+      description: Relevant console logs or stack traces (if applicable).
+      render: shell
+    validations:
+      required: false
