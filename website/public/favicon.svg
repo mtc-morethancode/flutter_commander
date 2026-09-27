@@ -1,1 +1,68 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><path fill-rule="evenodd" d="M81 36 64 0 47 36l-1 2-9-10a6 6 0 0 0-9 9l10 10h-2L0 64l36 17h2L28 91a6 6 0 1 0 9 9l9-10 1 2 17 36 17-36v-2l9 10a6 6 0 1 0 9-9l-9-9 2-1 36-17-36-17-2-1 9-9a6 6 0 1 0-9-9l-9 10v-2Zm-17 2-2 5c-4 8-11 15-19 19l-5 2 5 2c8 4 15 11 19 19l2 5 2-5c4-8 11-15 19-19l5-2-5-2c-8-4-15-11-19-19l-2-5Z" clip-rule="evenodd"/><path d="M118 19a6 6 0 0 0-9-9l-3 3a6 6 0 1 0 9 9l3-3Zm-96 4c-2 2-6 2-9 0l-3-3a6 6 0 1 1 9-9l3 3c3 2 3 6 0 9Zm0 82c-2-2-6-2-9 0l-3 3a6 6 0 1 0 9 9l3-3c3-2 3-6 0-9Zm96 4a6 6 0 0 1-9 9l-3-3a6 6 0 1 1 9-9l3 3Z"/><style>path{fill:#000}@media (prefers-color-scheme:dark){path{fill:#fff}}</style></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="nestGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00E5FF"/>
+      <stop offset="100%" stop-color="#0288D1"/>
+    </linearGradient>
+    <linearGradient id="cyanGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00E5FF"/>
+      <stop offset="100%" stop-color="#00B0FF"/>
+    </linearGradient>
+  </defs>
+
+  <!-- The Architectural Nest: Hexagonal Modular Frame (No rectangular background, 100% transparent) -->
+  <!-- Outer dashed architectural boundary -->
+  <polygon points="256,54 424,151 424,345 256,442 88,345 88,151" 
+           fill="none" stroke="url(#cyanGlow)" stroke-width="3" stroke-dasharray="14,8" opacity="0.85"/>
+  <!-- Inner precision alignment line -->
+  <polygon points="256,76 405,162 405,334 256,420 107,334 107,162" 
+           fill="none" stroke="#0288D1" stroke-width="1.8" opacity="0.6"/>
+
+  <!-- Hexagon Architectural Vertex Nodes -->
+  <circle cx="256" cy="54" r="4" fill="#00E5FF" opacity="0.9"/>
+  <circle cx="424" cy="151" r="4" fill="#00E5FF" opacity="0.9"/>
+  <circle cx="424" cy="345" r="4" fill="#00E5FF" opacity="0.9"/>
+  <circle cx="256" cy="442" r="4" fill="#00E5FF" opacity="0.9"/>
+  <circle cx="88" cy="345" r="4" fill="#00E5FF" opacity="0.9"/>
+  <circle cx="88" cy="151" r="4" fill="#00E5FF" opacity="0.9"/>
+
+  <!-- The Hornero Origami Inside His Masterpiece -->
+  <g stroke="rgba(2, 40, 80, 0.4)" stroke-width="0.75" stroke-linejoin="round">
+    <!-- Nape -->
+    <polygon points="180,190 235,135 285,140 245,205 180,190" fill="#0288D1"/>
+    <!-- Crown -->
+    <polygon points="235,135 285,140 340,175 300,195 245,205" fill="#40C4FF"/>
+    <!-- Forehead -->
+    <polygon points="285,140 340,175 365,200 320,215 300,195" fill="#80D8FF"/>
+    
+    <!-- Eye & Brow -->
+    <polygon points="300,195 320,215 285,235 255,210" fill="#01579B"/>
+    <polygon points="320,215 350,225 325,245 285,235" fill="#0288D1"/>
+    
+    <!-- Eye: cybernetic focus -->
+    <circle cx="304" cy="225" r="7" fill="#00E5FF" stroke="none"/>
+    <circle cx="304" cy="225" r="3.5" fill="#060914" stroke="none"/>
+    <circle cx="306" cy="223" r="1.5" fill="#FFFFFF" stroke="none"/>
+
+    <!-- Slender Builder Beak -->
+    <polygon points="365,200 435,240 380,248 350,225" fill="#00E5FF"/>
+    <polygon points="435,240 455,250 415,255 380,248" fill="#80D8FF"/>
+    <polygon points="380,248 455,250 410,260 360,258" fill="#014375"/>
+    <polygon points="360,258 410,260 380,272 345,266" fill="#0288D1"/>
+
+    <!-- Cheeks & Throat -->
+    <polygon points="285,235 325,245 345,266 295,285 255,255" fill="#0288D1"/>
+    <polygon points="345,266 360,258 330,310 295,285" fill="#FFFFFF"/>
+    <polygon points="295,285 330,310 310,355 265,330" fill="#B3E5FC"/>
+
+    <!-- Body & Neck -->
+    <polygon points="180,190 245,205 225,230 185,255 155,230" fill="#014375"/>
+    <polygon points="155,230 185,255 255,255 220,310 165,300" fill="#0B2342"/>
+    <polygon points="220,310 265,330 295,395 230,380 185,350" fill="#0288D1"/>
+    <polygon points="265,330 310,355 295,395" fill="#00E5FF"/>
+
+    <!-- Foundation Platform -->
+    <polygon points="185,350 230,380 295,395 270,425 205,395" fill="#01579B"/>
+    <polygon points="295,395 320,380 290,430 270,425" fill="#00E5FF"/>
+  </g>
+</svg>
