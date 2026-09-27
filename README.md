@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/mtc-morethancode/flutter_commander/main/doc/assets/logo.png" alt="flutter_commander logo" width="160" />
+  <img src="https://raw.githubusercontent.com/mtc-morethancode/flutter_commander/main/doc/assets/logo.png" alt="flutter_commander logo" width="220" />
 </p>
 
 <h1 align="center">flutter_commander</h1>
