@@ -1,33 +1,36 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
-    <linearGradient id="nestGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="hexBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#080F1E"/>
+      <stop offset="50%" stop-color="#050A14"/>
+      <stop offset="100%" stop-color="#0A1628"/>
+    </linearGradient>
+    <linearGradient id="cyanBorder" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#00E5FF"/>
       <stop offset="100%" stop-color="#0288D1"/>
     </linearGradient>
-    <linearGradient id="cyanGlow" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#00E5FF"/>
-      <stop offset="100%" stop-color="#00B0FF"/>
-    </linearGradient>
   </defs>
 
-  <!-- The Architectural Nest: Hexagonal Modular Frame (No rectangular background, 100% transparent) -->
-  <!-- Outer dashed architectural boundary -->
+  <!-- Solid Painted Hexagon Interior (The Architectural Nest) -->
   <polygon points="256,54 424,151 424,345 256,442 88,345 88,151" 
-           fill="none" stroke="url(#cyanGlow)" stroke-width="3" stroke-dasharray="14,8" opacity="0.85"/>
-  <!-- Inner precision alignment line -->
+           fill="url(#hexBg)"/>
+
+  <!-- Hexagon Architectural Blueprint Borders -->
+  <polygon points="256,54 424,151 424,345 256,442 88,345 88,151" 
+           fill="none" stroke="url(#cyanBorder)" stroke-width="3.5" stroke-dasharray="14,8"/>
   <polygon points="256,76 405,162 405,334 256,420 107,334 107,162" 
            fill="none" stroke="#0288D1" stroke-width="1.8" opacity="0.6"/>
 
-  <!-- Hexagon Architectural Vertex Nodes -->
-  <circle cx="256" cy="54" r="4" fill="#00E5FF" opacity="0.9"/>
-  <circle cx="424" cy="151" r="4" fill="#00E5FF" opacity="0.9"/>
-  <circle cx="424" cy="345" r="4" fill="#00E5FF" opacity="0.9"/>
-  <circle cx="256" cy="442" r="4" fill="#00E5FF" opacity="0.9"/>
-  <circle cx="88" cy="345" r="4" fill="#00E5FF" opacity="0.9"/>
-  <circle cx="88" cy="151" r="4" fill="#00E5FF" opacity="0.9"/>
+  <!-- Vertex Blueprint Nodes -->
+  <circle cx="256" cy="54" r="5" fill="#00E5FF"/>
+  <circle cx="424" cy="151" r="5" fill="#00E5FF"/>
+  <circle cx="424" cy="345" r="5" fill="#00E5FF"/>
+  <circle cx="256" cy="442" r="5" fill="#00E5FF"/>
+  <circle cx="88" cy="345" r="5" fill="#00E5FF"/>
+  <circle cx="88" cy="151" r="5" fill="#00E5FF"/>
 
-  <!-- The Hornero Origami Inside His Masterpiece -->
-  <g stroke="rgba(2, 40, 80, 0.4)" stroke-width="0.75" stroke-linejoin="round">
+  <!-- Fully Painted Origami Hornero Architect -->
+  <g>
     <!-- Nape -->
     <polygon points="180,190 235,135 285,140 245,205 180,190" fill="#0288D1"/>
     <!-- Crown -->
@@ -38,11 +41,10 @@
     <!-- Eye & Brow -->
     <polygon points="300,195 320,215 285,235 255,210" fill="#01579B"/>
     <polygon points="320,215 350,225 325,245 285,235" fill="#0288D1"/>
-    
-    <!-- Eye: cybernetic focus -->
-    <circle cx="304" cy="225" r="7" fill="#00E5FF" stroke="none"/>
-    <circle cx="304" cy="225" r="3.5" fill="#060914" stroke="none"/>
-    <circle cx="306" cy="223" r="1.5" fill="#FFFFFF" stroke="none"/>
+    <!-- Eye -->
+    <circle cx="304" cy="225" r="7" fill="#00E5FF"/>
+    <circle cx="304" cy="225" r="3.5" fill="#060914"/>
+    <circle cx="306" cy="223" r="1.5" fill="#FFFFFF"/>
 
     <!-- Slender Builder Beak -->
     <polygon points="365,200 435,240 380,248 350,225" fill="#00E5FF"/>
