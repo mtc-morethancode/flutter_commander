@@ -1,14 +1,24 @@
-# flutter_commander 🚀
+<p align="center">
+  <img src="https://raw.githubusercontent.com/mtc-morethancode/flutter_commander/main/doc/assets/logo.png" alt="flutter_commander logo" width="160" />
+</p>
 
-[![pub package](https://img.shields.io/badge/pub-v1.0.0-blue.svg)](https://pub.dev)
-[![Dart SDK](https://img.shields.io/badge/Dart-3.0+-0175C2.svg)](https://dart.dev)
-[![Flutter](https://img.shields.io/badge/Flutter-3.10+-02569B.svg)](https://flutter.dev)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Coverage](https://img.shields.io/badge/coverage-96%25-brightgreen.svg)]()
+<h1 align="center">flutter_commander</h1>
 
-**Enterprise MVI + Command Pattern architecture for Flutter.**
+<p align="center">
+  <b>Enterprise MVI + Command Pattern architecture for Flutter.</b><br>
+  Declarative concurrency, strict decoupling, one-shot side effects, and zero code generation.
+</p>
 
-`flutter_commander` brings decoupled, highly testable, enterprise-grade state management to Flutter without code generation, without bloated controllers, and with declarative concurrency control built directly into each use case.
+<p align="center">
+  <a href="https://pub.dev/packages/flutter_commander"><img src="https://img.shields.io/badge/pub-v1.0.0-blue.svg" alt="pub package" /></a>
+  <a href="https://dart.dev"><img src="https://img.shields.io/badge/Dart-3.0+-0175C2.svg" alt="Dart SDK" /></a>
+  <a href="https://flutter.dev"><img src="https://img.shields.io/badge/Flutter-3.10+-02569B.svg" alt="Flutter" /></a>
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>
+  <img src="https://img.shields.io/badge/coverage-96%25-brightgreen.svg" alt="Coverage" />
+  <a href="https://mtc-morethancode.github.io/flutter_commander/"><img src="https://img.shields.io/badge/docs-GitHub_Pages-blue.svg" alt="Documentation" /></a>
+</p>
+
+---
 
 ```bash
 flutter pub add flutter_commander

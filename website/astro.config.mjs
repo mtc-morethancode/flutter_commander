@@ -9,6 +9,10 @@ export default defineConfig({
 	integrations: [
 		starlight({
 			title: 'flutter_commander',
+			logo: {
+				src: './src/assets/logo.png',
+			},
+			favicon: '/favicon.png',
 			social: [
 				{ icon: 'github', label: 'GitHub', href: 'https://github.com/mtc-morethancode/flutter_commander' },
 			],
