@@ -153,4 +153,4 @@ When your branch is ready:
 
 ## 📄 License
 
-By contributing to `flutter_commander`, you agree that your contributions will be licensed under the project's [MIT License](LICENSE).
+By contributing to `flutter_commander`, you agree that your contributions will be licensed under the project's [MIT License](https://github.com/mtc-morethancode/flutter_commander/blob/main/LICENSE).

@@ -25,7 +25,7 @@ Closes #
 
 ## 📜 Checklist
 
-- [ ] My code adheres to the principles outlined in [CONTRIBUTING.md](CONTRIBUTING.md)
+- [ ] My code adheres to the principles outlined in [CONTRIBUTING.md](https://github.com/mtc-morethancode/flutter_commander/blob/main/CONTRIBUTING.md)
 - [ ] I have performed a self-review of my own code
 - [ ] I have added comments to hard-to-understand areas (if applicable)
 - [ ] My changes generate zero code-generation dependencies
