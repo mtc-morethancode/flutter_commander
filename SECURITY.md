@@ -27,7 +27,7 @@ If you discover a security vulnerability, concurrency race-condition leak, or de
 3. Fill out the details including proof of concept, impact, and affected versions.
 
 ### Method 2: Direct Email
-Send an email to **security@morethancode.dev** or **garispe@morethancode.dev** with:
+Send an email to **mtc.morethancode@gmail.com** with:
 * Description of the vulnerability.
 * Steps to reproduce or proof of concept code / test case.
 * Potential impact.
