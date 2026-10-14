@@ -1,0 +1,50 @@
+name: Publish to pub.dev
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+*'
+
+jobs:
+  publish:
+    name: Publish to pub.dev
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # Required for pub.dev OpenID Connect (OIDC) token exchange
+      contents: read
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Verify Flutter Installation
+        run: flutter doctor -v
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Verify Code Formatting
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Static Analysis
+        run: flutter analyze --fatal-infos
+
+      - name: Run Test Suite
+        run: flutter test
+
+      - name: Clean Temporary Test Artifacts
+        run: |
+          git status
+          git checkout -- .
+
+      - name: Verify pub.dev Publish Readiness (Dry Run)
+        run: flutter pub publish --dry-run
+
+      - name: Publish Package to pub.dev
+        run: dart pub publish --force
