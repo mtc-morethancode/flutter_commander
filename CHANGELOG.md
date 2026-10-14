@@ -1,3 +1,20 @@
+## 1.1.0
+
+* **CI/CD & Release Automation**:
+  * Automated GitHub release creation upon merging release branches.
+  * Automated `pub.dev` publishing pipeline using GitHub Actions OIDC trusted publishing.
+  * Upgraded CI/CD GitHub Actions dependencies (`actions/checkout`, `actions/setup-node`, `actions/deploy-pages`, `actions/upload-pages-artifact`).
+* **Community & Governance**:
+  * Added comprehensive `CONTRIBUTING.md` guidelines and Pull Request template.
+  * Added `CODE_OF_CONDUCT.md` and `SECURITY.md` policy files.
+  * Added structured GitHub issue templates for bug reports and feature requests.
+  * Configured `CODEOWNERS` for repository governance and required reviews.
+  * Configured Dependabot for automated dependency updates across workflows and website packages.
+  * Standardized official contact and security reporting emails to `mtc.morethancode@gmail.com`.
+* **Documentation & Website**:
+  * Updated documentation website dependencies (`astro`, `@astrojs/starlight`, `sharp`).
+  * Updated canonical repository, contributing, and license links.
+
 ## 1.0.0
 
 * Initial official production release of `flutter_commander`.
