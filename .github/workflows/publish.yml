@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Dart SDK (provisions OIDC token for pub.dev)
         uses: dart-lang/setup-dart@v1
