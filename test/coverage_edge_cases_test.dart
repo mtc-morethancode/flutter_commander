@@ -1,5 +1,6 @@
 import 'dart:async';
 
+// ignore: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:flutter_commander/flutter_commander.dart';
 import 'package:flutter_commander/src/commander/command_registry.dart';
